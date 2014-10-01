@@ -12,7 +12,7 @@ all:		fungewars
 clean:		
 		rm -f fungewars fungewars.o
 
-fungewars:	fungewars.o
+fungewars:	fungewars.o interpreter.o graphics.o
 		${LD} -o $@ $^ ${LDFLAGS}
 
 %.o:		%.c %.h

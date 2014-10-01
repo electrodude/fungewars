@@ -4,28 +4,38 @@
  *
  */
 
-typedef struct cell
+#pragma once
+
+#include <pthread.h>
+
+#define max(a,b) ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a > _b ? _a : _b; })
+#define min(a,b) ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a < _b ? _a : _b; })
+
+#define CWIDTH 256
+#define CHEIGHT 256
+
+typedef struct
 {
 	char instr;
 	int fg;		// (cell is occupied) ? 1 : 0
 	int bg;		// team of last IP to overrun cell
 } cell;
 
-typedef enum falive
+typedef enum
 {
 	DEAD,
 	ALIVE,
 	GHOST,
 } falive;
 
-typedef enum fmode
+typedef enum
 {
 	PAUSED,
 	STEP,
 	RUN
 } fmode;
 
-typedef struct fthread
+typedef struct
 {
 	unsigned int i;
 	unsigned int id;
@@ -46,54 +56,27 @@ typedef struct fthread
 	fmode mode;
 } fthread;
 
-typedef struct coord
+typedef struct
 {
 	int x;
 	int y;
 } coord;
 
-inline int wrap(int x, int m);
+extern pthread_mutex_t fthreadsmutex;
 
-GLuint png_texture_load(const char * file_name, int * width, int * height);
+extern cell field[CHEIGHT][CWIDTH];
 
-void glputc(int x, int y, int c);
+extern fthread* fthreads;
+extern unsigned int fthreadslen;
 
-fthread* newfthread(unsigned int team, int x, int y, int dx, int dy, int flag);
+extern int cthread;
 
-fthread* dupfthread(fthread** parent);
 
-fthread killfthread(int id);
 
-int push(fthread* cfthread, int x);
+extern float colors[18][3];
 
-int pop(fthread* cfthread);
-
-coord* chkline(int x0, int y0, int x1, int y1, char check);
-
-int execinstr(fthread* cfthread, cell *ccell);
-
-void *interpreter(void *threadid);
+int wrap(int x, int m);
 
 void newgame();
-
-void focusthread(fthread* cfthread);
-
-void focuscam(float x, float y);
-
-void mulzoom(float factor);
-
-void display(void);
-
-void reshape(int width, int height);
-
-void kb1(unsigned char key, int x, int y);
-
-void kb1u(unsigned char key, int x, int y);
-
-void kb2(int key, int x, int y);
-
-void kb2u(int key, int x, int y);
-
-void idle(void);
 
 int main(int argc, char** argv);
