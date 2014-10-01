@@ -1,9 +1,11 @@
 CFLAGS=-std=c99 -O2 -g
 #CXXFLAGS=-std=c++11 -O2 -g -fpermissive
-LDFLAGS=-L/usr/lib/ -L/usr/lib/mesa/ -lglut -lGL -lGLU -lm -lpthread -lpng
+LDFLAGS=-L/usr/lib64/ -L/usr64/lib/mesa/ -lglut -lGL -lGLU -lm -lpthread -lpng
 CC=gcc
 #CXX=g++
-LD=ld
+
+# should use ld but it won't work, have to figure this out
+LD=g++
 
 all:		fungewars
 
@@ -13,8 +15,8 @@ clean:
 fungewars:	fungewars.o
 		${LD} -o $@ $^ ${LDFLAGS}
 
-%.o:		%.c
-		${CC} ${CFLAGS} -c -o $@ $^
+%.o:		%.c %.h
+		${CC} ${CFLAGS} -c -o $@ $<
 
-#%.o:		%.cpp
-#		${CXX} ${CXXFLAGS} -c -o $@ $^
+#%.o:		%.cpp %.hpp
+#		${CXX} ${CXXFLAGS} -c -o $@ $<
