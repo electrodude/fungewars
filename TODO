@@ -1,9 +1,9 @@
 Switch from GLUT to GLFW 3 or SDL, make it only redraw when necessary
 
-Split code into at least two files, one per thread: graphics and interpreter
-
 saving, better loading
 
 better editor
 
 make graphics also wrap around the edge, not just the interpreter
+
+network multiplayer
