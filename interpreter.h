@@ -34,6 +34,6 @@ int pop(fthread* cfthread);
 
 coord* chkline(int x0, int y0, int x1, int y1, char check);
 
-int execinstr(fthread* cfthread, cell *ccell);
+int execinstr(fthread* cfthread, cell* ccell);
 
-void *interpreter(void *threadid);
+void* interpreter(void* threadid);

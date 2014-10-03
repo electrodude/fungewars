@@ -46,7 +46,7 @@ typedef struct
 	int dx;
 	int dy;
 	int delta;
-	int *stack;
+	int* stack;
 	int stackidx;
 	int stacksize;
 	int stringmode;

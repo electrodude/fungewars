@@ -34,11 +34,11 @@ int timenow=0;
 int timelast=0;
 int timebase=0;
 
-GLuint png_texture_load(const char * file_name, int * width, int * height)
+GLuint png_texture_load(const char* file_name, int* width, int* height)
 {
 	png_byte header[8];
 	
-	FILE *fp = fopen(file_name, "rb");
+	FILE* fp = fopen(file_name, "rb");
 	if (fp == 0)
 	{
 		perror(file_name);
@@ -123,14 +123,20 @@ GLuint png_texture_load(const char * file_name, int * width, int * height)
 	switch(color_type)
 	{
 		case PNG_COLOR_TYPE_RGB:
+		{
 			format = GL_RGB;
 			break;
+		}
 		case PNG_COLOR_TYPE_RGB_ALPHA:
+		{
 			format = GL_RGBA;
 			break;
+		}
 		default:
+		{
 			fprintf(stderr, "%s: Unknown libpng color type %d.\n", file_name, color_type);
 			return 0;
+		}
 	}
 	
 	// Update the png info struct.

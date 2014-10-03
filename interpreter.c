@@ -85,7 +85,7 @@ fthread* dupfthread(fthread** parent)
 	/*
 	int id=0;
 	for (id=0; id<fthreadslen && fthreads[id]; id++);
-	fthread *cfthread = fthreads[id] = malloc(sizeof(fthread));
+	fthread* cfthread = fthreads[id] = malloc(sizeof(fthread));
 	cfthread->id = id;
 	cfthread->parent = parent->id;
 	cfthread->team = parent->team;
@@ -149,7 +149,7 @@ int getfthread(int x, int y)
 	return -1;
 }
 
-int push(fthread *cfthread, int x)
+int push(fthread* cfthread, int x)
 {
 	if (cfthread->stackidx > cfthread->stacksize)
 	{
@@ -161,7 +161,7 @@ int push(fthread *cfthread, int x)
 	return x;
 }
 
-int pop(fthread *cfthread)
+int pop(fthread* cfthread)
 {
 	if (cfthread->stackidx<=0) return 0;
 	return cfthread->stack[--cfthread->stackidx];
@@ -193,7 +193,7 @@ coord* chkline(int x0, int y0, int x1, int y1, char check)	//modified off of Wik
 	return NULL;
 }
 
-int execinstr(fthread *cfthread, cell *ccell)
+int execinstr(fthread* cfthread, cell* ccell)
 {
 	//printf("id=%d, instr=%c, x=%d, y=%d, tos=%d\n", cfthread->i, ccell.instr, cfthread->x, cfthread->y, cfthread->stack[cfthread->stackidx-1]);
 	if (cfthread->mode == STEP) cfthread->mode = PAUSED;
@@ -211,23 +211,32 @@ int execinstr(fthread *cfthread, cell *ccell)
 		int t2=0;
 		int destx;
 		int desty;
-		cell *ccell2;
-		coord *culprit;
+		cell* ccell2;
+		coord* culprit;
 		switch (ccell->instr&127)
 		{
 			case '!':
+			{
 				push(cfthread, !pop(cfthread));
 				break;
+			}
 			case '"':
+			{
 				cfthread->stringmode = !cfthread->stringmode;
 				break;
+			}
 			case '#':
+			{
 				cfthread->delta++;
 				break;
+			}
 			case '$':
+			{
 				pop(cfthread);
 				break;
+			}
 			case '%':
+			{
 				t1 = pop(cfthread);
 				t2 = pop(cfthread);
 				if (t1)
@@ -240,23 +249,33 @@ int execinstr(fthread *cfthread, cell *ccell)
 				}
 				
 				break;
+			}
 			case '\'':
+			{
 				cfthread->delta++;
 				ccell2 = &field[wrap(cfthread->y + cfthread->dy,CHEIGHT)][wrap(cfthread->x + cfthread->dx, CWIDTH)];
 				push(cfthread, ccell2->instr);
 				ccell2->bg = cfthread->team*2;
 				break;
+			}
 			case '*':
+			{
 				push(cfthread, pop(cfthread) * pop(cfthread));
 				break;
+			}
 			case '+':
+			{
 				push(cfthread, pop(cfthread) + pop(cfthread));
 				break;
+			}
 			case '-':
+			{
 				t1 = pop(cfthread);
 				push(cfthread, pop(cfthread)-t1);
 				break;
+			}
 			case '/':
+			{
 				t1 = pop(cfthread);
 				t2 = pop(cfthread);
 				if (t1)
@@ -268,6 +287,7 @@ int execinstr(fthread *cfthread, cell *ccell)
 					push(cfthread, 0);
 				}
 				break;
+			}
 			case '0':
 			case '1':
 			case '2':
@@ -278,45 +298,66 @@ int execinstr(fthread *cfthread, cell *ccell)
 			case '7':
 			case '8':
 			case '9':
+			{
 				push(cfthread, ccell->instr - '0');
 				break;
+			}
 			case ':':
+			{
 				push(cfthread, push(cfthread, pop(cfthread)));	//please optimise me!
 				break;
+			}
 			case ';':
+			{
 				cfthread->jmpmode = !cfthread->jmpmode;
 				break;
+			}
 			case '<':
+			{
 				cfthread->dx = -1;
 				cfthread->dy = 0;
 				break;
+			}
 			case '>':
+			{
 				cfthread->dx = 1;
 				cfthread->dy = 0;
 				break;
+			}
 			case '?':
+			{
 				switch (rand()&3)
 				{
 					case 0:
+					{
 						cfthread->dx = 1;
 						cfthread->dy = 0;
 						break;
+					}
 					case 1:
+					{
 						cfthread->dx = -1;
 						cfthread->dy = 0;
 						break;
+					}
 					case 2:
+					{
 						cfthread->dx = 0;
 						cfthread->dy = 1;
 						break;
+					}
 					case 3:
+					{
 						cfthread->dx = 0;
 						cfthread->dy = -1;
 						break;
+					}
 				}
 				break;
+			}
 			case '@':
 			case 'q':
+			{
 				if (cfthread->i == ghostid) break;
 				killfthread(cfthread->i);
 				cfthread->x = wrap(cfthread->x - cfthread->dx, CWIDTH);
@@ -324,39 +365,52 @@ int execinstr(fthread *cfthread, cell *ccell)
 				ccell->fg = 1;
 				ccell->bg = cfthread->team*2;
 				break;
+			}
 			case 'B':		//reflect if pop()>0
+			{
 				if (pop(cfthread)>0)
 				{
 					cfthread->dx = -cfthread->dx;
 					cfthread->dy = -cfthread->dy;
 				}
 				break;
+			}
 			case 'H':		//_ but backwards
+			{
 				cfthread->dx = pop(cfthread)>0 ? 1 : -1;
 				cfthread->dy = 0;
 				break;
+			}
 			case 'I':		//| but backwards
+			{
 				cfthread->dx = 0;
 				cfthread->dy = pop(cfthread)>0 ? -1 : 1;
 				break;
+			}
 			case 'O':		//forth OVER = 1 PICK
+			{
 				push(cfthread, 1);
 			case 'P':		//forth PICK
+			{
 				t1 = -pop(cfthread)-1;
 				t1 += cfthread->stackidx;
 				if (t1<0) t1=0;
 				if (t1>cfthread->stackidx) t1 = cfthread->stackidx;
 				push(cfthread, cfthread->stack[t1]);
 				break;
+			}
 			/*
 			case 'R':		//forth ROLL
-				
+			{
 				break;
+			}
 			case 'T':		//forth TUCK
-				
+			{	
 				break;
+			}
 			//*/
 			case 'W':		//w but backwards
+			{
 				t1 = pop(cfthread);
 				t2 = pop(cfthread);
 				if (t1<t2)
@@ -372,42 +426,58 @@ int execinstr(fthread *cfthread, cell *ccell)
 					cfthread->dy = t1;
 				}
 				break;
+			}
 			case '[':
+			{
 				t1 = cfthread->dx;
 				cfthread->dx = -cfthread->dy;
 				cfthread->dy = t1;
 				break;
+			}
 			case '\\':
+			{
 				t1 = pop(cfthread);
 				t2 = pop(cfthread);
 				push(cfthread, t1);
 				push(cfthread, t2);
 				break;
+			}
 			case ']':
+			{
 				t1 = cfthread->dx;
 				cfthread->dx = cfthread->dy;
 				cfthread->dy = -t1;
 				break;
+			}
 			case '^':
+			{
 				cfthread->dx = 0;
 				cfthread->dy = 1;
 				break;
+			}
 			case '_':
+			{
 				cfthread->dx = pop(cfthread)>0 ? -1 : 1;
 				cfthread->dy = 0;
 				break;
+			}
 			case '`':
+			{
 				push(cfthread, pop(cfthread) < pop(cfthread));
 				break;
+			}
 			case 'a':
 			case 'b':
 			case 'c':
 			case 'd':
 			case 'e':
 			case 'f':
+			{
 				push(cfthread, ccell->instr - 'a' + 10); 
 				break;
+			}
 			case 'g':
+			{
 				t1 = pop(cfthread);
 				t2 = pop(cfthread);
 				destx = wrap(t2*cfthread->dx - t1*cfthread->dy + cfthread->x, CWIDTH);
@@ -416,10 +486,14 @@ int execinstr(fthread *cfthread, cell *ccell)
 				push(cfthread, ccell2->instr);
 				ccell2->bg = cfthread->team*2;
 				break;
+			}
 			case 'j':
+			{
 				cfthread->delta += pop(cfthread)-1;
 				break;
+			}
 			case 'k':
+			{
 				//focusthread(cfthread);
 				cfthread->repeats = pop(cfthread);
 				cfthread->delta--;	//decrement delta because we're doing one here
@@ -427,10 +501,14 @@ int execinstr(fthread *cfthread, cell *ccell)
 				cfthread->y = wrap(cfthread->y + cfthread->dy, CHEIGHT);
 				//delta += execinstr(cfthread, ccell)-1;
 				break;
+			}
 			case 'n':
+			{
 				cfthread->stackidx = 0;
 				break;
+			}
 			case 'p':
+			{
 				t1 = pop(cfthread);
 				t2 = pop(cfthread);
 				if (cfthread->i == ghostid) break;
@@ -443,9 +521,11 @@ int execinstr(fthread *cfthread, cell *ccell)
 					ccell2->bg = cfthread->team*2;
 				}
 				break;
+			}
 				//q is with @
 				//r is below t
 			case 's':
+			{
 				if (cfthread->i == ghostid)
 				{
 					pop(cfthread);
@@ -456,20 +536,27 @@ int execinstr(fthread *cfthread, cell *ccell)
 				ccell2->instr = pop(cfthread);
 				ccell2->bg = cfthread->team*2;
 				break;
+			}
 			case 't':		//clone
+			{
 				if (cfthread->i == ghostid) break;
 				dupfthread(&cfthread);
-
+			}
 			case 'X':		//running an X is the same as an r; X's main purpose is to MemBlock p, g, x, j, ", and ;
 			case 'r':		//reflect
+			{
 				cfthread->dx = -cfthread->dx;
 				cfthread->dy = -cfthread->dy;
 				break;
+			}
 			case 'v':		//go down
+			{
 				cfthread->dx = 0;
 				cfthread->dy = -1;
 				break;
+			}
 			case 'w':
+			{
 				t1 = pop(cfthread);
 				t2 = pop(cfthread);
 				if (t1>t2)
@@ -485,16 +572,22 @@ int execinstr(fthread *cfthread, cell *ccell)
 					cfthread->dy = t1;
 				}
 				break;
+			}
 			case 'x':
+			{
 				cfthread->dy = pop(cfthread);
 				cfthread->dx = pop(cfthread);
 				break;
+			}
 			case '|':
+			{
 				cfthread->dx = 0;
 				cfthread->dy = pop(cfthread)>0 ? 1 : -1;
 				break;
+			}
 			//default:
 				//break;
+			}
 		}
 		if (cfthread->repeats) cfthread->repeats--;
 	}				
@@ -510,7 +603,7 @@ int execinstr(fthread *cfthread, cell *ccell)
 	//printf("id=%d, instr=%c, x=%d, y=%d, tos=%d\n", cfthread->i, ccell.instr, cfthread->x, cfthread->y, cfthread->stack[cfthread->stackidx-1]);
 }
 
-void *interpreter(void *threadid)
+void* interpreter(void* threadid)
 {
 	int id = (int)threadid;
 	
@@ -535,12 +628,12 @@ void *interpreter(void *threadid)
 	
 	for (i=0; i<7; i++)
 	{
-		//char *fname = asprintf("warriors/%d.b98", i);
+		//char* fname = asprintf("warriors/%d.b98", i);
 		//fp = fopen(fname, "r");
 		//free(fname);
-		char *fname;
+		char* fname;
 		asprintf(&fname, "warriors/%d.b98", i);
-		FILE *fp = fopen(fname, "r");
+		FILE* fp = fopen(fname, "r");
 		free(fname);
 		x2=x= rand()%CWIDTH;
 		y2=y= rand()%CHEIGHT;
@@ -551,16 +644,20 @@ void *interpreter(void *threadid)
 			switch (cchar)
 			{
 				case '\n':
+				{
 					y2--;
 					if (y2<0) y2+=CHEIGHT;
 					x2=x;
 					break;
+				}
 				default:
-					//;cell ccell = ;
+				{
+					//cell ccell = ;
 					field[y2][x2].instr = cchar;
 					field[y2][x2++].bg = (i+1)*2;
 					x2%=CWIDTH;
 					break;
+				}
 			}
 		}
 		newfthread(i+1, x, y, 1, 0, 0);
@@ -576,10 +673,10 @@ void *interpreter(void *threadid)
 		//unsigned int i;
 		for (i=0; i<fthreadslen; i++)
 		{
-			fthread *cfthread = &fthreads[i];
+			fthread* cfthread = &fthreads[i];
 			if (cfthread->alive != DEAD && (((run2 != PAUSED) && cfthread->mode == RUN) || cfthread->mode == STEP))
 			{
-				cell *ccell = &field[cfthread->y][cfthread->x];
+				cell* ccell = &field[cfthread->y][cfthread->x];
 				field[cfthread->y][cfthread->x].fg = 1;
 				field[cfthread->y][cfthread->x].bg = cfthread->team*2;
 				execinstr(cfthread, ccell);

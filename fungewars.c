@@ -100,7 +100,7 @@ void newgame()
 	ghostid = newfthread(8, 0, 0, 0, 0, NFT_GHOST)->i;
 }
 
-void focusthread(fthread *cfthread)
+void focusthread(fthread* cfthread)
 {
 	cthread = cfthread->i;
 	cx = cfthread->x - swidth/2;
@@ -148,6 +148,7 @@ void kb1(unsigned char key, int x, int y)
 	switch (key)
 	{
 		case 9:
+		{
 			t1 = cthread>=0 ? cthread : fthreadslen-1;
 			do
 			{
@@ -171,8 +172,9 @@ void kb1(unsigned char key, int x, int y)
 			lastupdate = 1;
 			
 			break;
-			
+		}
 		case 25:
+		{
 			t1 = cthread>=0 ? cthread : 0;
 			do
 			{
@@ -196,20 +198,26 @@ void kb1(unsigned char key, int x, int y)
 			lastupdate = 1;
 
 			break;
+		}
 		/*
 		case '+':
 		case '=':
+		{
 			if (delay>1) delay/=1.5;
 			printf("delay: %d\n", delay);
 			break;
+		}
 		case '-':
 		case '_':
+		{
 			delay*=1.5;
 			printf("delay: %d\n", delay);
 			break;
+		}
 		//*/
 		case 8:
 		case 127:
+		{
 			field[yi][xi].instr=0;
 			if (cthread == ghostid && ghostid != -1)
 			{
@@ -217,14 +225,19 @@ void kb1(unsigned char key, int x, int y)
 				fthreads[ghostid].mode = STEP;
 			}
 			break;
+		}
 		default:
+		{
 			field[yi][xi].instr = key;
+		}
 		case '\r':
 		case '\n':
+		{
 			if (cthread == ghostid && ghostid != -1)
 			{
 				fthreads[ghostid].mode = STEP;
 			}
+		}
 	}
 	//glutPostRedisplay();
 }
