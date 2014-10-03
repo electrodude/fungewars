@@ -247,22 +247,32 @@ void kb2(int key, int x, int y)
 	switch (key)
 	{
 		case 1:
+		{
 			if (delay>1) delay/=2;
 			printf("delay: %d\n", delay);
 			break;
+		}
 		case 2:
+		{
 			if (delay<2000000) delay*=2;;
 			printf("delay: %d\n", delay);
 			break;
+		}
 		case 3:
+		{
 			mulzoom(1.0/1.25);
 			break;
+		}
 		case 4:
+		{
 			mulzoom(1.25);
 			break;
+		}
 		case 8:
+		{
 			run = (run==RUN) ? PAUSED : RUN;
 			break;
+		}
 	}
 	//pthread_mutex_lock(&fthreadsmutex);
 	if (cthread >= 0)
@@ -273,9 +283,12 @@ void kb2(int key, int x, int y)
 			switch (key)
 			{
 				case 5:
+				{
 					cfthread.mode = STEP;
 					break;
+				}
 				case 6:
+				{
 					printf("stack trace for thread %d:\n", cthread);
 					int i;
 					for (i=0; i<cfthread.stackidx; i++)
@@ -283,11 +296,21 @@ void kb2(int key, int x, int y)
 						printf("%d: %d\n", i, cfthread.stack[i]);
 					}
 					break;
+				}
+				case 7:
+				{
+					cthread = -1;
+					break;
+				}
 				case 9:
+				{
 					cfthread.mode = (cfthread.mode==RUN) ? PAUSED : RUN; 
 					break;
+				}
 				default:
+				{
 					break;
+				}
 			}
 		}
 	}
@@ -296,26 +319,29 @@ void kb2(int key, int x, int y)
 		switch (key)
 		{
 			case 5:
-				run = STEP;
+			{	run = STEP;
 				break;
+			}
 			case 7:
-				if (cthread != ghostid)
+			{
+				cthread = getfthread(xi, yi);
+
+				if (cthread == -1)
 				{
 					fthreads[ghostid].x = xi;
 					fthreads[ghostid].y = yi;
 					focusthread(&fthreads[ghostid]);
 				}
-				else
-				{
-					cthread = -1;
-				}
-
 				break;
+			}
 			case 9:
-				run = (run==RUN) ? PAUSED : RUN; 
+			{	run = (run==RUN) ? PAUSED : RUN; 
 				break;
+			}
 			default:
+			{
 				break;
+			}
 		}
 	}
 	//pthread_mutex_unlock(&fthreadsmutex);

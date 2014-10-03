@@ -24,7 +24,9 @@ fthread* newfthread(unsigned int team, int x, int y, int dx, int dy, int flag);
 
 fthread* dupfthread(fthread** parent);
 
-fthread killfthread(int id);
+void killfthread(int id);
+
+int getfthread(int x, int y);
 
 int push(fthread* cfthread, int x);
 

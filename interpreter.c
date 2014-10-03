@@ -124,7 +124,7 @@ fthread* dupfthread(fthread** parent)
 	return cfthread;
 }
 
-fthread killfthread(int id)
+void killfthread(int id)
 {
 	free(fthreads[id].stack);
 	fthreads[id].alive = DEAD;
@@ -133,6 +133,20 @@ fthread killfthread(int id)
 #if debugout >= 2
 	printf("kill thread, id=%d\n", id);
 #endif
+}
+
+int getfthread(int x, int y)
+{
+	for (int i=0; i<fthreadslen; i++)
+	{
+		fthread* cfthread = &fthreads[i];
+		if (cfthread->x == x && cfthread->y == y)
+		{
+			return i;
+		}
+	}
+
+	return -1;
 }
 
 int push(fthread *cfthread, int x)
