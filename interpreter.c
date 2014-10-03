@@ -626,7 +626,7 @@ void* interpreter(void* threadid)
 	int y2;
 	char cchar;
 	
-	for (i=0; i<7; i++)
+	for (i=0; i<8; i++)
 	{
 		//char* fname = asprintf("warriors/%d.b98", i);
 		//fp = fopen(fname, "r");
