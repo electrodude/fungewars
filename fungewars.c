@@ -37,6 +37,8 @@ cell field[CHEIGHT][CWIDTH];
 
 int cthread = -1;
 
+enum {NORMAL, REPLACE, VISUAL} uimode = NORMAL;
+
 
 #define BOF 0.0
 #define BON 0.7
@@ -145,6 +147,65 @@ void kb1(unsigned char key, int x, int y)
 	int yi = (cy+sheight/2)/charheight;
 	
 	int t1;
+	if (key == 27)
+	{
+		uimode = NORMAL;
+	}
+	switch (uimode)
+	{
+		case NORMAL:
+		{
+			switch (key)
+			{
+				// mode switching
+				case 'r':
+				{
+					uimode = REPLACE;
+					break;
+				}
+				case 'v':
+				{
+					uimode = VISUAL;
+					break;
+				}
+
+			}
+			break;
+		}
+		case REPLACE:
+		{
+			switch (key)
+			{
+				case 9:
+				case 25:
+				case 8:
+				case 127:
+				{
+					break;
+				}
+				default:
+				{
+					field[yi][xi].instr = key;
+					//continue;
+				}
+				case '\r':
+				case '\n':
+				{
+					if (cthread == ghostid && ghostid != -1)
+					{
+						fthreads[ghostid].mode = STEP;
+					}
+					break;
+				}
+			}
+
+			break;
+		}
+		case VISUAL:
+		{
+			break;
+		}
+	}
 	switch (key)
 	{
 		case 9:
@@ -225,18 +286,6 @@ void kb1(unsigned char key, int x, int y)
 				fthreads[ghostid].mode = STEP;
 			}
 			break;
-		}
-		default:
-		{
-			field[yi][xi].instr = key;
-		}
-		case '\r':
-		case '\n':
-		{
-			if (cthread == ghostid && ghostid != -1)
-			{
-				fthreads[ghostid].mode = STEP;
-			}
 		}
 	}
 	//glutPostRedisplay();
@@ -369,7 +418,7 @@ void kb2u(int key, int x, int y)
 
 void idle(void)
 {
-	if (/*keys['w'] || keys['W'] ||*/ keys[357])
+	if (keys[357] || ((uimode == NORMAL || uimode == VISUAL) && (keys['k'] || keys['w'] || keys['W'])))
 	{
 		cy+=(2.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/czoom;
 		if (cthread != ghostid)
@@ -385,7 +434,7 @@ void idle(void)
 			pthread_mutex_unlock(&fthreadsmutex);
 		}
 	}
-	if (/*keys['a'] || keys['A'] ||*/ keys[356])
+	if (keys[356] || ((uimode == NORMAL || uimode == VISUAL) && (keys['h'] || keys['a'] || keys['A'])))
 	{
 		cx-=(2.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/czoom;
 		if (cthread != ghostid) cthread = -1;
@@ -398,7 +447,7 @@ void idle(void)
 			pthread_mutex_unlock(&fthreadsmutex);
 		}
 	}
-	if (/*keys['s'] || keys['S'] ||*/ keys[359])
+	if (keys[359] || ((uimode == NORMAL || uimode == VISUAL) && (keys['j'] || keys['s'] || keys['S'])))
 	{
 		cy-=(2.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/czoom;
 		if (cthread != ghostid) cthread = -1;
@@ -411,7 +460,7 @@ void idle(void)
 			pthread_mutex_unlock(&fthreadsmutex);
 		}
 	}
-	if (/*keys['d'] || keys['D'] ||*/ keys[358])
+	if (keys[358] || ((uimode == NORMAL || uimode == VISUAL) && (keys['l'] || keys['d'] || keys['D'])))
 	{
 		cx+=(2.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/czoom;
 		if (cthread != ghostid) cthread = -1;
