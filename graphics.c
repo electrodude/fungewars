@@ -1,3 +1,5 @@
+#include <math.h>
+
 #include "graphics.h"
 
 int font;
@@ -289,6 +291,8 @@ void display(void)
 	gluLookAt(0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	glTranslatef(0.0, -1, -1);
 
+	glPushMatrix();
+
 	glScalef(czoom, czoom, 1);
 	
 	//glBindTexture(GL_TEXTURE_2D, font);
@@ -329,6 +333,21 @@ void display(void)
 	glVertex2f(chx+charwidth/2-1, chy);
 	glVertex2f(swidth, chy);
 	glEnd();
+
+	glPopMatrix();
+
+	glEnable(GL_TEXTURE_2D);
+	for (int x=0; x<statuslinelen; x++)
+	{
+		cell current = statusline[x];
+		glColor4f(colors[current.bg][0], colors[current.bg][1], colors[current.bg][2], 1.0);
+		glputc(x*charwidth, 0.0, 0xDB);
+
+		glColor4f(colors[current.fg][0], colors[current.fg][1], colors[current.fg][2], 0.5);
+		glputc(x*charwidth, 0.0, current.instr);
+	}
+	glDisable(GL_TEXTURE_2D);
+
 	
 	
 	//cx+=3;

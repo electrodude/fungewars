@@ -71,7 +71,8 @@ extern unsigned int fthreadslen;
 
 extern int cthread;
 
-
+cell* statusline;
+int statuslinelen;
 
 extern float colors[18][3];
 

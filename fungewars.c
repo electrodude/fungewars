@@ -37,7 +37,16 @@ cell field[CHEIGHT][CWIDTH];
 
 int cthread = -1;
 
-enum {NORMAL, REPLACE, VISUAL} uimode = NORMAL;
+enum {NORMAL, EX, SREPLACE, REPLACE, VISUAL, INSERT} uimode = NORMAL;
+
+char uilastcmd = 0;
+
+char* excmd;
+int exlen;
+int exmax;
+
+extern cell* statusline;
+extern int statuslinelen;
 
 
 #define BOF 0.0
@@ -149,27 +158,58 @@ void kb1(unsigned char key, int x, int y)
 	int t1;
 	if (key == 27)
 	{
+
+		for (int i=0; i<exlen+1; i++)
+		{
+			statusline[i].instr = ' ';
+		}
 		uimode = NORMAL;
+		puts("NORMAL");
 	}
 	switch (uimode)
 	{
 		case NORMAL:
 		{
+			//int pfx = 0;
+
 			switch (key)
 			{
 				// mode switching
 				case 'r':
 				{
+					uimode = SREPLACE;
+					puts("SREPLACE");
+					break;
+				}
+				case 'R':
+				{
 					uimode = REPLACE;
+					puts("REPLACE");
 					break;
 				}
 				case 'v':
 				{
 					uimode = VISUAL;
+					puts("VISUAL");
 					break;
 				}
-
+				case ':':
+				{
+					uimode = EX;
+					exlen = 0;
+					statusline[0].instr = ':';
+					excmd[0] = 0;
+					puts("EX");
+					break;
+				}
 			}
+			break;
+		}
+		case SREPLACE:
+		{
+			field[yi][xi].instr = key;
+			uimode = NORMAL;
+			puts("NORMAL");
 			break;
 		}
 		case REPLACE:
@@ -203,6 +243,63 @@ void kb1(unsigned char key, int x, int y)
 		}
 		case VISUAL:
 		{
+			break;
+		}
+		case EX:
+		{
+			switch (key)
+			{
+				case 8:
+				{
+					statusline[exlen].instr = ' ';
+
+					if (exlen > 0)
+					{
+						excmd[--exlen] = 0;
+					}
+					else
+					{
+						for (int i=0; i<exlen+1; i++)
+						{
+							statusline[i].instr = ' ';
+						}
+						uimode = NORMAL;
+						puts("NORMAL");
+					}
+					break;
+				}
+				case '\r':
+				case '\n':
+				{
+					printf("ex command: %s\n", excmd);
+					// process ex command
+					if (!strcmp(excmd, "q"))
+					{
+						glutLeaveMainLoop();
+					}
+
+					for (int i=0; i<exlen+1; i++)
+					{
+						statusline[i].instr = ' ';
+					}
+					uimode = NORMAL;
+					puts("NORMAL");
+					break;
+				}
+				default:
+				{
+					excmd[exlen++] = key;
+					statusline[exlen].instr = key;
+
+					if (exlen >= exmax)
+					{
+						excmd = (char*)realloc(excmd, exmax*=2);
+						printf("resize ex buffer to %d bytes\n", exmax);
+					}
+					excmd[exlen] = 0;
+					break;
+				}
+			}
 			break;
 		}
 	}
@@ -288,6 +385,8 @@ void kb1(unsigned char key, int x, int y)
 			break;
 		}
 	}
+
+	uilastcmd = key;
 	//glutPostRedisplay();
 }
 
@@ -494,7 +593,11 @@ void idle(void)
 int main(int argc, char** argv)
 {
 	srand(time(NULL));
-	
+
+	exmax = 128;
+	excmd = (char*)malloc(exmax*sizeof(char));
+	exlen = 0;
+
 	//printf("%g, %g, %g, %g\n", 1/DX, 1/DY, 1/DX2, 1/DY2);
 	glutInit(&argc, argv);
 	
@@ -529,7 +632,20 @@ int main(int argc, char** argv)
 	
 	charwidth = fontwidth/16;
 	charheight = fontheight/16;
-	
+
+	statuslinelen = swidth / charwidth;
+	statusline = (cell*)malloc(statuslinelen*sizeof(cell));
+
+	for (int i=0; i<statuslinelen; i++)
+	{
+		cell* current = &statusline[i];
+
+		current->instr = ' ';
+		current->fg = 1;
+		current->bg = 0;
+	}
+
+
 	newgame();
 	
 	//glutMainLoop();
