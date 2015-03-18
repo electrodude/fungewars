@@ -55,7 +55,7 @@ extern int timebase;
 
 GLuint png_texture_load(const char* file_name, int* width, int* height);
 
-void glputc(int x, int y, int c);
+void glputc(float x, float y, int c);
 
 void focusthread(fthread* cfthread);
 

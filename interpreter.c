@@ -104,7 +104,7 @@ fthread* dupfthread(fthread** parent)
 
 	if (offset)
 	{
-		printf("offset=%X, (parent-fthreads)/sizeof(fthread)=%X\n", offset, ((*parent)-fthreads)/sizeof(fthread));
+		printf("offset=%X, (parent-fthreads)/sizeof(fthread)=0x%X\n", offset, ((*parent)-fthreads)/sizeof(fthread));
 	}
 	
 	cfthread->parent = (*parent)->id;

@@ -197,17 +197,17 @@ GLuint png_texture_load(const char* file_name, int* width, int* height)
 	return texture;
 }
 
-void glputc(int x, int y, int c)
+void glputc(float x, float y, int c)
 {
 	c&=255;
 	float charx = ((float)(c%16))/16;
 	float chary = ((float)(c/16))/16;
 	glEnable(GL_TEXTURE_2D);
 	glBegin(GL_QUADS);
-	glTexCoord2f(charx,        1.0-chary-0.0625);	glVertex2i(x,    y);
-	glTexCoord2f(charx+0.0625, 1.0-chary-0.0625);	glVertex2i(x+charwidth, y);
-	glTexCoord2f(charx+0.0625, 1.0-chary);			glVertex2i(x+charwidth, y+charheight);
-	glTexCoord2f(charx,        1.0-chary);			glVertex2i(x,    y+charheight);
+	glTexCoord2f(charx,        1.0-chary-0.0625);   glVertex2f(x,           y);
+	glTexCoord2f(charx+0.0625, 1.0-chary-0.0625);   glVertex2f(x+charwidth, y);
+	glTexCoord2f(charx+0.0625, 1.0-chary);          glVertex2f(x+charwidth, y+charheight);
+	glTexCoord2f(charx,        1.0-chary);          glVertex2f(x,           y+charheight);
 	glEnd();
 }
 
@@ -323,15 +323,24 @@ void display(void)
 	
 	glColor4f(1.0, 1.0, 1.0, 0.5);
 	glBegin(GL_LINES);
-	glVertex2f(chx, 0);
+	glVertex2f(chx, 0.0);
 	glVertex2f(chx, chy-charheight/2);
 	glVertex2f(chx, chy+charheight/2);
 	glVertex2f(chx, sheight);
 	
-	glVertex2f(0, chy);
+	glVertex2f(0.0, chy);
 	glVertex2f(chx-charwidth/2-1, chy);
 	glVertex2f(chx+charwidth/2-1, chy);
 	glVertex2f(swidth, chy);
+	glEnd();
+
+
+	glColor4f(0.0, 1.0, 1.0, 0.75);
+	glBegin(GL_LINE_LOOP);
+	glVertex2f(-ccx, -ccy);
+	glVertex2f(-ccx, CHEIGHT*charheight + 1 - ccy);
+	glVertex2f(CWIDTH*charwidth + 1 - ccx, CHEIGHT*charheight + 1 - ccy);
+	glVertex2f(CWIDTH*charwidth + 1 - ccx, -ccy);
 	glEnd();
 
 	glPopMatrix();
