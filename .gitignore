@@ -1,0 +1,9 @@
+*.o
+fungewars
+
+# vim
+.*.swp
+
+# Sublime Text
+.sublime-project
+.sublime-workspace
