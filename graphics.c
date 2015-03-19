@@ -1,5 +1,7 @@
 #include <math.h>
 
+#include "fungewars.h"
+
 #include "graphics.h"
 
 int font;
@@ -28,13 +30,50 @@ float cdy=0.0;
 int rswidth = 1280;
 int rsheight = 752;
 
-int swidth = 1280;
-int sheight = 752;
+float swidth = 1280;
+float sheight = 752;
 
 int frame=0;
 int timenow=0;
 int timelast=0;
 int timebase=0;
+
+
+#define B0 0.0
+#define B1 0.5
+#define F0 0.0
+#define F1 1.0
+
+color colors[18]=
+{
+	{B0,  B0,  B0,  1.0},
+	{F1,  F1,  F1,  1.0},
+	
+	{B1,  B0,  B0,  1.0},
+	{F1,  F0,  F0,  1.0},
+	
+	{B0,  B1,  B0,  1.0},
+	{F0,  F1,  F0,  1.0},
+	
+	{B0,  B0,  B1,  1.0},
+	{F0,  F0,  F1,  1.0},
+	
+	{B0,  B1,  B1,  1.0},
+	{F0,  F1,  F1,  1.0},
+	
+	{B1,  B0,  B1,  1.0},
+	{F1,  F0,  F1,  1.0},
+	
+	{B1,  B1,  B0,  1.0},
+	{F1,  F1,  F0,  1.0},
+	
+	{0.7, 0.7, 0.7, 1.0},
+	{1.0, 1.0, 1.0, 1.0},
+	
+	{0.4, 0.4, 0.4, 1.0},
+	{0.4, 0.4, 0.4, 1.0},
+
+};
 
 GLuint png_texture_load(const char* file_name, int* width, int* height)
 {
@@ -211,6 +250,11 @@ void glputc(float x, float y, int c)
 	glEnd();
 }
 
+inline void glcolor(color* c)
+{
+	glColor4f(c->r, c->g, c->b, c->a);
+}
+
 void display(void)
 {	
 	swidth=rswidth/czoom;
@@ -297,6 +341,7 @@ void display(void)
 	
 	//glBindTexture(GL_TEXTURE_2D, font);
 	
+	// board contents
 	int x;
 	int y;
 	
@@ -307,10 +352,10 @@ void display(void)
 		{
 			cell current = field[y][x];
 			//timenow=glutGet(GLUT_ELAPSED_TIME);
-			glColor4f(colors[current.bg][0], colors[current.bg][1], colors[current.bg][2], 1.0);
+			glcolor(current.bg);
 			glputc(x*charwidth-ccx, y*charheight-ccy, 0xDB);
 
-			glColor4f(colors[current.fg][0], colors[current.fg][1], colors[current.fg][2], 0.5);
+			glcolor(current.fg);
 			glputc(x*charwidth-ccx, y*charheight-ccy, current.instr);
 			//glDisable(GL_TEXTURE_2D);
 		}
@@ -318,10 +363,11 @@ void display(void)
 	}
 	glDisable(GL_TEXTURE_2D);
 	
+	// crosshairs
 	float chx = (((int)(cx+swidth/2))/charwidth)*charwidth +charwidth/2-ccx;
 	float chy = (((int)(cy+sheight/2))/charheight)*charheight +charheight/2-ccy;
 	
-	glColor4f(1.0, 1.0, 1.0, 0.5);
+	glColor4f(1.0, 1.0, 1.0, 1.0);
 	glBegin(GL_LINES);
 	glVertex2f(chx, 0.0);
 	glVertex2f(chx, chy-charheight/2);
@@ -329,13 +375,14 @@ void display(void)
 	glVertex2f(chx, sheight);
 	
 	glVertex2f(0.0, chy);
-	glVertex2f(chx-charwidth/2-1, chy);
-	glVertex2f(chx+charwidth/2-1, chy);
+	glVertex2f(chx-charwidth/2, chy);
+	glVertex2f(chx+charwidth/2, chy);
 	glVertex2f(swidth, chy);
 	glEnd();
 
 
-	glColor4f(0.0, 1.0, 1.0, 0.75);
+	// board border
+	glColor4f(0.0, 1.0, 1.0, 1.0);
 	glBegin(GL_LINE_LOOP);
 	glVertex2f(-ccx, -ccy);
 	glVertex2f(-ccx, CHEIGHT*charheight + 1 - ccy);
@@ -345,14 +392,16 @@ void display(void)
 
 	glPopMatrix();
 
+
+	// status line	
 	glEnable(GL_TEXTURE_2D);
 	for (int x=0; x<statuslinelen; x++)
 	{
 		cell current = statusline[x];
-		glColor4f(colors[current.bg][0], colors[current.bg][1], colors[current.bg][2], 1.0);
+		glcolor(current.bg);
 		glputc(x*charwidth, 0.0, 0xDB);
 
-		glColor4f(colors[current.fg][0], colors[current.fg][1], colors[current.fg][2], 0.5);
+		glcolor(current.fg);
 		glputc(x*charwidth, 0.0, current.instr);
 	}
 	glDisable(GL_TEXTURE_2D);
@@ -423,4 +472,41 @@ void reshape(int w, int h)
 	glLoadIdentity();
 	
 	glutPostRedisplay();
+}
+
+void gl_init()
+{
+	//glutInit(&argc, argv);
+	int argc=0;
+	glutInit(&argc, NULL);
+	
+	//glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
+	glutInitWindowSize(swidth, sheight);
+	
+	glutCreateWindow("Funge Wars");
+	
+	//glEnable(GL_TEXTURE_2D);
+	
+	glClearColor(0.0, 0.0, 0.0, 1.0);
+	
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);	
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	
+	glLineWidth(1);
+	
+	glutDisplayFunc(display);
+	glutReshapeFunc(reshape);
+	glutKeyboardFunc(kb1);
+	glutKeyboardUpFunc(kb1u);
+	glutSpecialFunc(kb2);
+	glutSpecialUpFunc(kb2u);
+	glutIdleFunc(idle);
+	
+	font = png_texture_load("curses_640x300_2.png", &fontwidth, &fontheight);
+	printf("font tex id: %d\n", font);
+	
+	charwidth = fontwidth/16;
+	charheight = fontheight/16;
 }

@@ -37,7 +37,7 @@ cell field[CHEIGHT][CWIDTH];
 
 int cthread = -1;
 
-enum {NORMAL, EX, SREPLACE, REPLACE, VISUAL, INSERT} uimode = NORMAL;
+//enum {NORMAL, EX, SREPLACE, REPLACE, VISUAL, INSERT} uimode = NORMAL;
 
 char uilastcmd = 0;
 
@@ -45,44 +45,11 @@ char* excmd;
 int exlen;
 int exmax;
 
-extern cell* statusline;
-extern int statuslinelen;
+cell* statusline;
+int statuslinelen;
 
 
-#define BOF 0.0
-#define BON 0.7
-#define FOF 0.3
-#define FON 1.0
 
-float colors[18][3]=
-{
-	{BOF, BOF, BOF},
-	{1.0, 1.0, 1.0},
-	
-	{BON, BOF, BOF},
-	{FON, FOF, FOF},
-	
-	{BOF, BON, BOF},
-	{FOF, FON, FOF},
-	
-	{BOF, BOF, BON},
-	{FOF, FOF, FON},
-	
-	{BOF, BON, BON},
-	{FOF, FON, FON},
-	
-	{BON, BOF, BON},
-	{FON, FOF, FON},
-	
-	{BON, BON, BOF},
-	{FON, FON, FOF},
-	
-	{0.7, 0.7, 0.7},
-	{1.0, 1.0, 1.0},
-	
-	{0.4, 0.4, 0.4},
-	{0.4, 0.4, 0.4},
-};
 
 pthread_t threads[NUM_THREADS];
 pthread_mutex_t fthreadsmutex;
@@ -111,6 +78,38 @@ void newgame()
 	ghostid = newfthread(8, 0, 0, 0, 0, NFT_GHOST)->i;
 }
 
+color color_clear = {0.0, 0.0, 0.0, 0.0};
+
+color color_status_fg = {1.0, 1.0, 1.0, 1.0};
+color color_status_bg = {0.0, 0.0, 0.0, 0.75};
+
+void clrstatus()
+{
+	for (int i=0; i<statuslinelen; i++)
+	{
+		statusline[i].instr = ' ';
+		statusline[i].fg = &color_status_fg;
+		statusline[i].bg = &color_clear;
+	}
+	exlen = 0;
+}
+
+void setstatus_c(int i, char c)
+{
+	statusline[i].instr = c;
+	statusline[i].fg = &color_status_fg;
+	statusline[i].bg = &color_status_bg;
+}
+
+void setstatus(const char* s)
+{
+	int i=0;
+	while (*s)
+	{
+		setstatus_c(i++, *s++);
+	}
+}
+
 void focusthread(fthread* cfthread)
 {
 	cthread = cfthread->i;
@@ -131,10 +130,10 @@ void focuscam(float x, float y)
 
 void mulzoom(float factor)
 {
-	int cxc=((int)(cx+swidth/2))/charwidth;
-	int cyc=((int)(cy+sheight/2))/charheight;
-	int ccxc=((int)(ccx+swidth/2))/charwidth;
-	int ccyc=((int)(ccy+sheight/2))/charheight;
+	float cxc=(cx+swidth/2)/charwidth;
+	float cyc=(cy+sheight/2)/charheight;
+	float ccxc=(ccx+swidth/2)/charwidth;
+	float ccyc=(ccy+sheight/2)/charheight;
 	
 	czoom*=factor;
 	swidth=rswidth/czoom;
@@ -164,7 +163,7 @@ void kb1(unsigned char key, int x, int y)
 			statusline[i].instr = ' ';
 		}
 		uimode = NORMAL;
-		puts("NORMAL");
+		clrstatus();
 	}
 	switch (uimode)
 	{
@@ -175,31 +174,35 @@ void kb1(unsigned char key, int x, int y)
 			switch (key)
 			{
 				// mode switching
-				case 'r':
+				case 'r': // single character replace mode
 				{
 					uimode = SREPLACE;
-					puts("SREPLACE");
+					setstatus("-- CHAR REPLACE --");
 					break;
 				}
-				case 'R':
+				case 'R': // replace mode
 				{
 					uimode = REPLACE;
-					puts("REPLACE");
+					setstatus("-- REPLACE --");
 					break;
 				}
-				case 'v':
+				case 'v': // visual mode
 				{
 					uimode = VISUAL;
-					puts("VISUAL");
+					setstatus("-- VISUAL --");
 					break;
 				}
-				case ':':
+
+				case ' ': // step
 				{
-					uimode = EX;
-					exlen = 0;
-					statusline[0].instr = ':';
-					excmd[0] = 0;
-					puts("EX");
+					run = STEP;
+					break;
+				}
+
+				case '\r':
+				case '\n':
+				{
+					run = (run==RUN) ? PAUSED : RUN;
 					break;
 				}
 			}
@@ -209,7 +212,7 @@ void kb1(unsigned char key, int x, int y)
 		{
 			field[yi][xi].instr = key;
 			uimode = NORMAL;
-			puts("NORMAL");
+			clrstatus();
 			break;
 		}
 		case REPLACE:
@@ -223,11 +226,6 @@ void kb1(unsigned char key, int x, int y)
 				{
 					break;
 				}
-				default:
-				{
-					field[yi][xi].instr = key;
-					//continue;
-				}
 				case '\r':
 				case '\n':
 				{
@@ -235,6 +233,11 @@ void kb1(unsigned char key, int x, int y)
 					{
 						fthreads[ghostid].mode = STEP;
 					}
+					break;
+				}
+				default:
+				{
+					field[yi][xi].instr = key;
 					break;
 				}
 			}
@@ -259,12 +262,10 @@ void kb1(unsigned char key, int x, int y)
 					}
 					else
 					{
-						for (int i=0; i<exlen+1; i++)
-						{
-							statusline[i].instr = ' ';
-						}
+						clrstatus();
+
 						uimode = NORMAL;
-						puts("NORMAL");
+						clrstatus();
 					}
 					break;
 				}
@@ -278,18 +279,16 @@ void kb1(unsigned char key, int x, int y)
 						glutLeaveMainLoop();
 					}
 
-					for (int i=0; i<exlen+1; i++)
-					{
-						statusline[i].instr = ' ';
-					}
+					clrstatus();
+
 					uimode = NORMAL;
-					puts("NORMAL");
+					clrstatus();
 					break;
 				}
 				default:
 				{
 					excmd[exlen++] = key;
-					statusline[exlen].instr = key;
+					setstatus_c(exlen, key);
 
 					if (exlen >= exmax)
 					{
@@ -303,6 +302,48 @@ void kb1(unsigned char key, int x, int y)
 			break;
 		}
 	}
+
+	if (uimode == NORMAL || uimode == VISUAL)
+	{
+		switch (key)
+		{
+			case ':':
+			{
+				clrstatus();
+				uimode = EX;
+				setstatus_c(0, ':');
+				excmd[0] = 0;
+				break;
+			}
+
+			case '+': // faster
+			case '=':
+			{
+				if (delay>1) delay/=2;
+				printf("delay: %d\n", delay);
+				break;
+			}
+			case '-': // slower
+			{
+				if (delay<2000000) delay*=2;;
+				printf("delay: %d\n", delay);
+				break;
+			}
+
+
+			case '[': // zoom out
+			{
+				mulzoom(1.0/1.25);
+				break;
+			}
+			case ']': // zoom in
+			{
+				mulzoom(1.25);
+				break;
+			}
+		}
+	}
+
 	switch (key)
 	{
 		case 9:
@@ -480,7 +521,8 @@ void kb2(int key, int x, int y)
 		switch (key)
 		{
 			case 5:
-			{	run = STEP;
+			{
+				run = STEP;
 				break;
 			}
 			case 7:
@@ -598,53 +640,12 @@ int main(int argc, char** argv)
 	excmd = (char*)malloc(exmax*sizeof(char));
 	exlen = 0;
 
-	//printf("%g, %g, %g, %g\n", 1/DX, 1/DY, 1/DX2, 1/DY2);
-	glutInit(&argc, argv);
-	
-	//glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
-	glutInitWindowSize(swidth, sheight);
-	
-	glutCreateWindow("Funge Wars");
-	
-	//glEnable(GL_TEXTURE_2D);
-	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	
-	glClearColor(0.0, 0.0, 0.0, 1.0);
-	
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_ONE, GL_DST_COLOR);
-	//glBlendFunc(GL_SRC_COLOR, GL_DST_COLOR);
-	
-	glLineWidth(1);
-	
-	glutDisplayFunc(display);
-	glutReshapeFunc(reshape);
-	glutKeyboardFunc(kb1);
-	glutKeyboardUpFunc(kb1u);
-	glutSpecialFunc(kb2);
-	glutSpecialUpFunc(kb2u);
-	//glutSpecialFunc(keyboard);
-	glutIdleFunc(idle);
-	
-	font = png_texture_load("curses_640x300_2.png", &fontwidth, &fontheight);
-	printf("font tex id: %d\n", font);
-	
-	charwidth = fontwidth/16;
-	charheight = fontheight/16;
+	gl_init();
 
 	statuslinelen = swidth / charwidth;
 	statusline = (cell*)malloc(statuslinelen*sizeof(cell));
 
-	for (int i=0; i<statuslinelen; i++)
-	{
-		cell* current = &statusline[i];
-
-		current->instr = ' ';
-		current->fg = 1;
-		current->bg = 0;
-	}
-
+	clrstatus();
 
 	newgame();
 	

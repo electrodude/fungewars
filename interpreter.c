@@ -68,8 +68,8 @@ fthread* newfthread(unsigned int team, int x, int y, int dx, int dy, int flag)
 		cfthread->alive = GHOST;
 	}
 	
-	field[y][x].fg = 1;//cfthread->team*2+1;
-	field[y][x].bg = cfthread->team*2+1;
+	field[y][x].fg = &colors[1];//cfthread->team*2+1;
+	field[y][x].bg = &colors[cfthread->team*2+1];
 	
 	//cthread = id;
 	
@@ -255,7 +255,7 @@ int execinstr(fthread* cfthread, cell* ccell)
 				cfthread->delta++;
 				ccell2 = &field[wrap(cfthread->y + cfthread->dy,CHEIGHT)][wrap(cfthread->x + cfthread->dx, CWIDTH)];
 				push(cfthread, ccell2->instr);
-				ccell2->bg = cfthread->team*2;
+				ccell2->bg = &colors[cfthread->team*2];
 				break;
 			}
 			case '*':
@@ -362,8 +362,8 @@ int execinstr(fthread* cfthread, cell* ccell)
 				killfthread(cfthread->i);
 				cfthread->x = wrap(cfthread->x - cfthread->dx, CWIDTH);
 				cfthread->y = wrap(cfthread->y - cfthread->dy, CHEIGHT);
-				ccell->fg = 1;
-				ccell->bg = cfthread->team*2;
+				ccell->fg = &colors[1];
+				ccell->bg = &colors[cfthread->team*2];
 				break;
 			}
 			case 'B':		//reflect if pop()>0
@@ -485,7 +485,7 @@ int execinstr(fthread* cfthread, cell* ccell)
 				desty = wrap(t1*cfthread->dx + t2*cfthread->dy + cfthread->y, CHEIGHT);
 				ccell2 = &field[desty][destx];
 				push(cfthread, ccell2->instr);
-				ccell2->bg = cfthread->team*2;
+				ccell2->bg = &colors[cfthread->team*2];
 				break;
 			}
 			case 'j':
@@ -519,7 +519,7 @@ int execinstr(fthread* cfthread, cell* ccell)
 				{
 					ccell2 = &field[desty][destx];
 					ccell2->instr = pop(cfthread);
-					ccell2->bg = cfthread->team*2;
+					ccell2->bg = &colors[cfthread->team*2];
 				}
 				break;
 			}
@@ -535,7 +535,7 @@ int execinstr(fthread* cfthread, cell* ccell)
 				cfthread->delta++;
 				ccell2 = &field[wrap(cfthread->y + cfthread->dy,CHEIGHT)][wrap(cfthread->x + cfthread->dx, CWIDTH)];
 				ccell2->instr = pop(cfthread);
-				ccell2->bg = cfthread->team*2;
+				ccell2->bg = &colors[cfthread->team*2];
 				break;
 			}
 			case 't':		//clone
@@ -597,8 +597,8 @@ int execinstr(fthread* cfthread, cell* ccell)
 		cfthread->x = wrap(cfthread->x + cfthread->dx*cfthread->delta, CWIDTH);
 		cfthread->y = wrap(cfthread->y + cfthread->dy*cfthread->delta, CHEIGHT);
 	}
-	field[cfthread->y][cfthread->x].fg = 1;//cfthread->team*2+1;
-	field[cfthread->y][cfthread->x].bg = cfthread->team*2+1;
+	field[cfthread->y][cfthread->x].fg = &colors[1];//cfthread->team*2+1;
+	field[cfthread->y][cfthread->x].bg = &colors[cfthread->team*2+1];
 	if (!cfthread->repeats) cfthread->delta=1;
 	//printf("id=%d, instr=%c, x=%d, y=%d, tos=%d\n", cfthread->i, ccell.instr, cfthread->x, cfthread->y, cfthread->stack[cfthread->stackidx-1]);
 }
@@ -615,8 +615,8 @@ void* interpreter(void* threadid)
 		for (x=0; x<CWIDTH; x++)
 		{
 			field[y][x].instr = 0;//*(rand()&1) ? 0 :*/ rand()%96 + 32;
-			field[y][x].fg = 1;//rand() % 8;
-			field[y][x].bg = 0;//(rand()&31) ? 0 : rand() % 8;
+			field[y][x].fg = &colors[1];//rand() % 8;
+			field[y][x].bg = &colors[0];//(rand()&31) ? 0 : rand() % 8;
 		}
 	}
 	
@@ -654,7 +654,7 @@ void* interpreter(void* threadid)
 				{
 					//cell ccell = ;
 					field[y2][x2].instr = cchar;
-					field[y2][x2++].bg = (i+1)*2;
+					field[y2][x2++].bg = &colors[(i+1)*2];
 					x2%=CWIDTH;
 					break;
 				}
@@ -677,8 +677,8 @@ void* interpreter(void* threadid)
 			if (cfthread->alive != DEAD && (((run2 != PAUSED) && cfthread->mode == RUN) || cfthread->mode == STEP))
 			{
 				cell* ccell = &field[cfthread->y][cfthread->x];
-				field[cfthread->y][cfthread->x].fg = 1;
-				field[cfthread->y][cfthread->x].bg = cfthread->team*2;
+				field[cfthread->y][cfthread->x].fg = &colors[1];
+				field[cfthread->y][cfthread->x].bg = &colors[cfthread->team*2];
 				execinstr(cfthread, ccell);
 			}
 		}

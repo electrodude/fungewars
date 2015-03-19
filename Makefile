@@ -15,6 +15,12 @@ clean:
 fungewars:	fungewars.o interpreter.o graphics.o
 		${LD} -o $@ $^ ${LDFLAGS}
 
+fungewars.o:	interpreter.h graphics.h
+
+graphics.o:	fungewars.h
+
+interpreter.o:	graphics.h
+
 %.o:		%.c %.h
 		${CC} ${CFLAGS} -c -o $@ $<
 

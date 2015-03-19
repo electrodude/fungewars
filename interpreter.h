@@ -2,6 +2,8 @@
 
 #include "fungewars.h"
 
+#include "graphics.h"
+
 #define INITIAL_FTHREADS 16
 
 #define INITIAL_STACKSIZE 1024

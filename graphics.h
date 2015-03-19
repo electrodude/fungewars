@@ -45,13 +45,17 @@ extern float cdy;
 extern int rswidth;
 extern int rsheight;
 
-extern int swidth;
-extern int sheight;
+extern float swidth;
+extern float sheight;
 
 extern int frame;
 extern int timenow;
 extern int timelast;
 extern int timebase;
+
+
+extern color colors[18];
+
 
 GLuint png_texture_load(const char* file_name, int* width, int* height);
 
@@ -76,3 +80,5 @@ void kb2(int key, int x, int y);
 void kb2u(int key, int x, int y);
 
 void idle(void);
+
+void gl_init();

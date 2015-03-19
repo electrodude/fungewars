@@ -14,11 +14,20 @@
 #define CWIDTH 256
 #define CHEIGHT 256
 
+// should this be in graphics.h?
+typedef struct
+{
+	double r;
+	double g;
+	double b;
+	double a;
+} color;
+
 typedef struct
 {
 	char instr;
-	int fg;		// (cell is occupied) ? 1 : 0
-	int bg;		// team of last IP to overrun cell
+	color* fg;
+	color* bg;
 } cell;
 
 typedef enum
@@ -71,13 +80,17 @@ extern unsigned int fthreadslen;
 
 extern int cthread;
 
-cell* statusline;
-int statuslinelen;
+enum {NORMAL, EX, SREPLACE, REPLACE, VISUAL, INSERT} uimode;
 
-extern float colors[18][3];
+extern cell* statusline;
+extern int statuslinelen;
 
 int wrap(int x, int m);
 
 void newgame();
+
+void clrstatus();
+
+void setstatus(const char* s);
 
 int main(int argc, char** argv);
