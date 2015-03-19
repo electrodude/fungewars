@@ -364,8 +364,8 @@ void display(void)
 	glDisable(GL_TEXTURE_2D);
 	
 	// crosshairs
-	float chx = (((int)(cx+swidth/2))/charwidth)*charwidth +charwidth/2-ccx;
-	float chy = (((int)(cy+sheight/2))/charheight)*charheight +charheight/2-ccy;
+	float chx = xi*charwidth  + charwidth/2  - ccx;
+	float chy = yi*charheight + charheight/2 - ccy;
 	
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 	glBegin(GL_LINES);
@@ -380,6 +380,41 @@ void display(void)
 	glVertex2f(swidth, chy);
 	glEnd();
 
+	// visual selection box
+	if (uimode == VISUAL)
+	{
+		float chx2 = chx - charwidth/2;
+		float chy2 = chy - charheight/2;
+
+		float chxv = xiv*charwidth  - ccx;
+		float chyv = yiv*charheight - ccy;
+
+		if (xi > xiv)
+		{
+			chx2 += charwidth;
+		}
+		else
+		{
+			chxv += charwidth;
+		}
+		
+		if (yi > yiv)
+		{
+			chy2 += charheight;
+		}
+		else
+		{
+			chyv += charheight;
+		}
+
+		glColor4f(1.0, 0.0, 0.0, 1.0);
+		glBegin(GL_LINE_LOOP);
+		glVertex2f(chx2, chy2);
+		glVertex2f(chxv, chy2);
+		glVertex2f(chxv, chyv);
+		glVertex2f(chx2, chyv);
+		glEnd();
+	}
 
 	// board border
 	glColor4f(0.0, 1.0, 1.0, 1.0);

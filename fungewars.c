@@ -48,7 +48,11 @@ int exmax;
 cell* statusline;
 int statuslinelen;
 
+int xi;
+int yi;
 
+int xiv;
+int yiv;
 
 
 pthread_t threads[NUM_THREADS];
@@ -151,9 +155,6 @@ void kb1(unsigned char key, int x, int y)
 	//printf("%d down\n", key);
 	keys[key] = 1;
 	
-	int xi = (cx+swidth/2)/charwidth;
-	int yi = (cy+sheight/2)/charheight;
-	
 	int t1;
 	if (key == 27)
 	{
@@ -188,6 +189,9 @@ void kb1(unsigned char key, int x, int y)
 				}
 				case 'v': // visual mode
 				{
+					xiv = xi;
+					yiv = yi;
+
 					uimode = VISUAL;
 					setstatus("-- VISUAL --");
 					break;
@@ -246,6 +250,13 @@ void kb1(unsigned char key, int x, int y)
 		}
 		case VISUAL:
 		{
+			switch (key)
+			{
+				case ' ': // flip selection (board wrap)
+				{
+					break;
+				}
+			}
 			break;
 		}
 		case EX:
@@ -440,9 +451,6 @@ void kb1u(unsigned char key, int x, int y)
 
 void kb2(int key, int x, int y)
 {
-	int xi = (cx+swidth/2)/charwidth;
-	int yi = (cy+sheight/2)/charheight;
-	
 	modkeys = glutGetModifiers();
 	//printf("%d down\n", key+256);
 	keys[key+256] = 1;
@@ -614,6 +622,10 @@ void idle(void)
 			pthread_mutex_unlock(&fthreadsmutex);
 		}
 	}
+
+	xi = (cx+swidth/2)/charwidth;
+	yi = (cy+sheight/2)/charheight;
+
 	
 	/*
 	int i;

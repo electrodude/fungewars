@@ -85,6 +85,12 @@ enum {NORMAL, EX, SREPLACE, REPLACE, VISUAL, INSERT} uimode;
 extern cell* statusline;
 extern int statuslinelen;
 
+extern int xi;
+extern int yi;
+
+extern int xiv;
+extern int yiv;
+
 int wrap(int x, int m);
 
 void newgame();
