@@ -1,9 +1,13 @@
-*.o
 fungewars
+
+# CMake
+CMakeFiles/*
+Makefile
+cmake_install.cmake
 
 # vim
 .*.swp
 
 # Sublime Text
-.sublime-project
-.sublime-workspace
+*.sublime-project
+*.sublime-workspace

@@ -250,7 +250,7 @@ void glputc(float x, float y, int c)
 	glEnd();
 }
 
-inline void glcolor(color* c)
+void glcolor(color* c)
 {
 	glColor4f(c->r, c->g, c->b, c->a);
 }
@@ -338,7 +338,7 @@ void display(void)
 	glPushMatrix();
 
 	glScalef(czoom, czoom, 1);
-	
+
 	//glBindTexture(GL_TEXTURE_2D, font);
 	
 	// board contents
