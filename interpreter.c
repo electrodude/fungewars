@@ -390,6 +390,7 @@ int execinstr(fthread* cfthread, cell* ccell)
 			case 'O':		//forth OVER = 1 PICK
 			{
 				push(cfthread, 1);
+			}
 			case 'P':		//forth PICK
 			{
 				t1 = -pop(cfthread)-1;
@@ -587,7 +588,6 @@ int execinstr(fthread* cfthread, cell* ccell)
 			}
 			//default:
 				//break;
-			}
 		}
 		if (cfthread->repeats) cfthread->repeats--;
 	}				
