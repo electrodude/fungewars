@@ -387,6 +387,13 @@ int execinstr(fthread* cfthread, cell* ccell)
 				cfthread->dy = pop(cfthread)>0 ? -1 : 1;
 				break;
 			}
+			case 'N':
+			{
+				ccell->instr = '@';
+				cfthread->x += cfthread->dx;
+				cfthread->y += cfthread->dy;
+				break;
+			}
 			case 'O':		//forth OVER = 1 PICK
 			{
 				push(cfthread, 1);
@@ -410,6 +417,12 @@ int execinstr(fthread* cfthread, cell* ccell)
 				break;
 			}
 			//*/
+			//
+			case 'S':		//s but onto self
+			{
+				ccell->instr = pop(cfthread);
+				break;
+			}
 			case 'W':		//w but backwards
 			{
 				t1 = pop(cfthread);
@@ -614,9 +627,9 @@ void* interpreter(void* threadid)
 	{
 		for (x=0; x<CWIDTH; x++)
 		{
-			field[y][x].instr = 0;//*(rand()&1) ? 0 :*/ rand()%96 + 32;
-			field[y][x].fg = &colors[1];//rand() % 8;
-			field[y][x].bg = &colors[0];//(rand()&31) ? 0 : rand() % 8;
+			field[y][x].instr = 0;
+			field[y][x].fg = NULL;
+			field[y][x].bg = NULL;
 		}
 	}
 	
@@ -654,6 +667,7 @@ void* interpreter(void* threadid)
 				{
 					//cell ccell = ;
 					field[y2][x2].instr = cchar;
+					field[y2][x2].fg   = &colors[1];
 					field[y2][x2++].bg = &colors[(i+1)*2];
 					x2%=CWIDTH;
 					break;

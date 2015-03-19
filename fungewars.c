@@ -87,22 +87,16 @@ color color_clear = {0.0, 0.0, 0.0, 0.0};
 color color_status_fg = {1.0, 1.0, 1.0, 1.0};
 color color_status_bg = {0.0, 0.0, 0.0, 0.75};
 
-void clrstatus()
+void setstatus_color(int i, char c, color* fg, color* bg)
 {
-	for (int i=0; i<statuslinelen; i++)
-	{
-		statusline[i].instr = ' ';
-		statusline[i].fg = &color_status_fg;
-		statusline[i].bg = &color_clear;
-	}
-	exlen = 0;
+	statusline[i].instr = c;
+	statusline[i].fg = fg;
+	statusline[i].bg = bg;
 }
 
 void setstatus_c(int i, char c)
 {
-	statusline[i].instr = c;
-	statusline[i].fg = &color_status_fg;
-	statusline[i].bg = &color_status_bg;
+	setstatus_color(i, c, &color_status_fg, &color_status_bg);
 }
 
 void setstatus(const char* s)
@@ -112,6 +106,15 @@ void setstatus(const char* s)
 	{
 		setstatus_c(i++, *s++);
 	}
+}
+
+void clrstatus()
+{
+	for (int i=0; i<statuslinelen; i++)
+	{
+		setstatus_color(i, ' ', &color_status_fg, &color_clear);
+	}
+	exlen = 0;
 }
 
 void focusthread(fthread* cfthread)
@@ -265,7 +268,7 @@ void kb1(unsigned char key, int x, int y)
 			{
 				case 8:
 				{
-					statusline[exlen].instr = ' ';
+					setstatus_color(exlen, ' ', &color_status_fg, &color_clear);
 
 					if (exlen > 0)
 					{
@@ -569,7 +572,7 @@ void idle(void)
 {
 	if (keys[357] || ((uimode == NORMAL || uimode == VISUAL) && (keys['k'] || keys['w'] || keys['W'])))
 	{
-		cy+=(2.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/czoom;
+		cy+=(3.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/czoom;
 		if (cthread != ghostid)
 		{
 			cthread = -1;
@@ -585,7 +588,7 @@ void idle(void)
 	}
 	if (keys[356] || ((uimode == NORMAL || uimode == VISUAL) && (keys['h'] || keys['a'] || keys['A'])))
 	{
-		cx-=(2.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/czoom;
+		cx-=(3.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/czoom;
 		if (cthread != ghostid) cthread = -1;
 		else
 		{
@@ -598,7 +601,7 @@ void idle(void)
 	}
 	if (keys[359] || ((uimode == NORMAL || uimode == VISUAL) && (keys['j'] || keys['s'] || keys['S'])))
 	{
-		cy-=(2.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/czoom;
+		cy-=(3.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/czoom;
 		if (cthread != ghostid) cthread = -1;
 		else
 		{
@@ -611,7 +614,7 @@ void idle(void)
 	}
 	if (keys[358] || ((uimode == NORMAL || uimode == VISUAL) && (keys['l'] || keys['d'] || keys['D'])))
 	{
-		cx+=(2.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/czoom;
+		cx+=(3.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/czoom;
 		if (cthread != ghostid) cthread = -1;
 		else
 		{

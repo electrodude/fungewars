@@ -255,6 +255,21 @@ void glcolor(color* c)
 	glColor4f(c->r, c->g, c->b, c->a);
 }
 
+void glputcell(float x, float y, cell* c)
+{
+	if (c->bg != NULL)
+	{
+		glcolor(c->bg);
+		glputc(x, y, 0xDB);
+	}
+
+	if (c->instr && c->fg != NULL)
+	{
+		glcolor(c->fg);
+		glputc(x, y, c->instr);
+	}
+}
+
 void display(void)
 {	
 	swidth=rswidth/czoom;
@@ -339,8 +354,6 @@ void display(void)
 
 	glScalef(czoom, czoom, 1);
 
-	//glBindTexture(GL_TEXTURE_2D, font);
-	
 	// board contents
 	int x;
 	int y;
@@ -350,16 +363,8 @@ void display(void)
 	{
 		for (x=max(ccx/charwidth,0); x<min((swidth+ccx)/charwidth+1,CWIDTH); x++)
 		{
-			cell current = field[y][x];
-			//timenow=glutGet(GLUT_ELAPSED_TIME);
-			glcolor(current.bg);
-			glputc(x*charwidth-ccx, y*charheight-ccy, 0xDB);
-
-			glcolor(current.fg);
-			glputc(x*charwidth-ccx, y*charheight-ccy, current.instr);
-			//glDisable(GL_TEXTURE_2D);
+			glputcell(x*charwidth - ccx, y*charheight - ccy, &field[y][x]);
 		}
-		//glPopMatrix();
 	}
 	glDisable(GL_TEXTURE_2D);
 	
@@ -432,12 +437,7 @@ void display(void)
 	glEnable(GL_TEXTURE_2D);
 	for (int x=0; x<statuslinelen; x++)
 	{
-		cell current = statusline[x];
-		glcolor(current.bg);
-		glputc(x*charwidth, 0.0, 0xDB);
-
-		glcolor(current.fg);
-		glputc(x*charwidth, 0.0, current.instr);
+		glputcell(x*charwidth, 1.5, &statusline[x]);
 	}
 	glDisable(GL_TEXTURE_2D);
 
