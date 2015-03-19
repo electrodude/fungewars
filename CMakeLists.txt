@@ -13,7 +13,7 @@ find_package(PNG REQUIRED)
 find_package(Threads REQUIRED)
 
 add_executable(fungewars
-    fungewars.o
+    fungewars.c
     interpreter
     graphics
 )
