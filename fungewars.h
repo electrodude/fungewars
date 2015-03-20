@@ -15,13 +15,7 @@
 #define CHEIGHT 256
 
 // should this be in graphics.h?
-typedef struct
-{
-	double r;
-	double g;
-	double b;
-	double a;
-} color;
+typedef float color[4];
 
 typedef struct
 {

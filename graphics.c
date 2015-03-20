@@ -242,7 +242,6 @@ void glputc(float x, float y, int c)
 	c&=255;
 	float charx = ((float)(c%16))/16;
 	float chary = ((float)(c/16))/16;
-	glEnable(GL_TEXTURE_2D);
 	glBegin(GL_QUADS);
 	glTexCoord2f(charx,        1.0-chary-0.0625);   glVertex2f(x,           y);
 	glTexCoord2f(charx+0.0625, 1.0-chary-0.0625);   glVertex2f(x+charwidth, y);
@@ -251,9 +250,9 @@ void glputc(float x, float y, int c)
 	glEnd();
 }
 
-void glcolor(color* c)
+void glcolor(const color c)
 {
-	glColor4f(c->r, c->g, c->b, c->a);
+	glColor4fv(c);
 }
 
 void glputcell(float x, float y, cell* c)

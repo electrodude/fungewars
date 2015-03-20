@@ -146,8 +146,8 @@ void focuscam(float x, float y)
 	ccdy = 0;
 }
 
-// process ex command
-void doex()
+// process command
+void docmd()
 {
 	printf("ex command: %s\n", excmd);
 
@@ -333,7 +333,7 @@ void kb1(unsigned char key, int x, int y)
 					uimode = NORMAL;
 					clrstatus();
 
-					doex();
+					docmd();
 
 					break;
 				}

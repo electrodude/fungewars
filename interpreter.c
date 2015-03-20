@@ -178,13 +178,15 @@ coord* chkline(int x0, int y0, int x1, int y1, char check)	//modified off of Wik
 	
 	while (1)
 	{
+		// blockers are overwritable if you can find them
+		if (x0==x1 && y0==y1) break;
+
 		if (field[y0][x0].instr == check)
 		{
 			culprit.x = x0;
 			culprit.y = y0;
 			return &culprit;
 		}
-		if (x0==x1 && y0==y1) break;
 		e2 = err;
 		if (e2 >-dx) { err -= dy; x0 += sx; }
 		if (e2 < dy) { err += dx; y0 += sy; }
