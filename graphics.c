@@ -250,22 +250,17 @@ void glputc(float x, float y, int c)
 	glEnd();
 }
 
-void glcolor(const color c)
-{
-	glColor4fv(c);
-}
-
 void glputcell(float x, float y, cell* c)
 {
 	if (c->bg != NULL)
 	{
-		glcolor(c->bg);
+		glColor4fv(c->bg);
 		glputc(x, y, 0xDB);
 	}
 
 	if (c->instr && c->fg != NULL)
 	{
-		glcolor(c->fg);
+		glColor4fv(c->fg);
 		glputc(x, y, c->instr);
 	}
 }
