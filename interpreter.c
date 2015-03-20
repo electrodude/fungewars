@@ -192,6 +192,51 @@ coord* chkline(int x0, int y0, int x1, int y1, char check)	//modified off of Wik
 	return NULL;
 }
 
+int loadwarrior(int x, int y, int team, const char* path)
+{
+	static int lastteam = 0;
+
+	if (team == -1)
+	{
+		team = lastteam++;
+	}
+
+	FILE* fp = fopen(path, "r");
+	
+	if (fp == NULL)
+	{
+		return 1;
+	}
+
+	int x2 = x;
+	int y2 = y;
+
+	char c;
+
+	while (fread(&c, 1, 1, fp))
+	{
+		switch (c)
+		{
+			case '\n':
+			{
+				y2--;
+				if (y2<0) y2+=CHEIGHT;
+				x2=x;
+				break;
+			}
+			default:
+			{
+				field[y2][x2].instr = c;
+				field[y2][x2++].bg = &colors[team*2];
+				x2 %= CWIDTH;
+				break;
+			}
+		}
+	}
+	newfthread(team, x, y, 1, 0, 0);
+	fclose(fp);
+}
+
 int execinstr(fthread* cfthread, cell* ccell)
 {
 	//printf("id=%d, instr=%c, x=%d, y=%d, tos=%d\n", cfthread->i, ccell.instr, cfthread->x, cfthread->y, cfthread->stack[cfthread->stackidx-1]);
@@ -630,57 +675,26 @@ void* interpreter(void* threadid)
 		}
 	}
 	
+#if 0	
 	unsigned int i;
-	
 	int x2;
 	int y2;
 	char cchar;
 	
 	for (i=0; i<8; i++)
 	{
-		//char* fname = asprintf("warriors/%d.b98", i);
-		//fp = fopen(fname, "r");
-		//free(fname);
 		char* fname;
 		asprintf(&fname, "warriors/%d.b98", i);
-		FILE* fp = fopen(fname, "r");
+
+		loadwarrior(rand()%CWIDTH, rand()%CHEIGHT, i, fname);
 		free(fname);
-		x2=x= rand()%CWIDTH;
-		y2=y= rand()%CHEIGHT;
-		//x2=x= 16;
-		//y2=y;//= 128-i*16;
-		while (fread(&cchar, 1, 1, fp))
-		{
-			switch (cchar)
-			{
-				case '\n':
-				{
-					y2--;
-					if (y2<0) y2+=CHEIGHT;
-					x2=x;
-					break;
-				}
-				default:
-				{
-					//cell ccell = ;
-					field[y2][x2].instr = cchar;
-					field[y2][x2++].bg = &colors[i*2];
-					x2%=CWIDTH;
-					break;
-				}
-			}
-		}
-		newfthread(i, x, y, 1, 0, 0);
-		//y=y2-16;
-		fclose(fp);
-	
 	}
-	
+#endif	
 	
 	while (1)
 	{
 		fmode run2 = run;
-		//unsigned int i;
+		unsigned int i;
 		for (i=0; i<fthreadslen; i++)
 		{
 			fthread* cfthread = &fthreads[i];

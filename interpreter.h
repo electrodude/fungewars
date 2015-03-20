@@ -36,6 +36,8 @@ int pop(fthread* cfthread);
 
 coord* chkline(int x0, int y0, int x1, int y1, char check);
 
+int loadwarrior(int x, int y, int team, const char* path);
+
 int execinstr(fthread* cfthread, cell* ccell);
 
 void* interpreter(void* threadid);

@@ -87,6 +87,8 @@ color color_clear = {0.0, 0.0, 0.0, 0.0};
 color color_status_fg = {1.0, 1.0, 1.0, 1.0};
 color color_status_bg = {0.0, 0.0, 0.0, 0.75};
 
+int status_dirty = 0;
+
 void setstatus_color(int i, char c, color* fg, color* bg)
 {
 	statusline[i].instr = c;
@@ -101,6 +103,13 @@ void setstatus_c(int i, char c)
 
 void setstatus(const char* s)
 {
+	if (status_dirty)
+	{
+		clrstatus();
+	}
+
+	status_dirty = 1;
+
 	int i=0;
 	while (*s)
 	{
@@ -115,6 +124,8 @@ void clrstatus()
 		setstatus_color(i, ' ', &color_status_fg, &color_clear);
 	}
 	exlen = 0;
+
+	status_dirty = 0;
 }
 
 void focusthread(fthread* cfthread)
@@ -150,6 +161,58 @@ void mulzoom(float factor)
 	cy = cyc*charheight-sheight/2;
 	ccx = ccxc*charwidth-swidth/2;
 	ccy = ccyc*charheight-sheight/2;
+}
+
+// process ex command
+void doex()
+{
+	printf("ex command: %s\n", excmd);
+
+	char* cmd = strtok(excmd, " ");
+
+	if (cmd == NULL)
+	{
+		return;
+	}
+
+	if (!strcmp(cmd, "q"))
+	{
+		glutLeaveMainLoop();
+	}
+
+	if (!strcmp(cmd, "load"))
+	{
+		char* path = strtok(NULL, " ");
+		char* team_s = strtok(NULL, " ");
+		if (path == NULL)
+		{
+			setstatus("Usage: load <path> <team id>");
+			return;
+		}
+		int team;
+		if (team_s == NULL)
+		{
+			team = -1;
+		}
+		else
+		{
+			team = atoi(team_s);
+		}
+		int status = loadwarrior(xi, yi, team, path);
+		switch (status)
+		{
+			case 0:
+			{
+				break;
+			}
+			case 1:
+			{
+				setstatus("Could not open file for reading.");
+				break;
+			}
+		}
+	}
+
 }
 
 void kb1(unsigned char key, int x, int y)
@@ -276,8 +339,6 @@ void kb1(unsigned char key, int x, int y)
 					}
 					else
 					{
-						clrstatus();
-
 						uimode = NORMAL;
 						clrstatus();
 					}
@@ -286,17 +347,11 @@ void kb1(unsigned char key, int x, int y)
 				case '\r':
 				case '\n':
 				{
-					printf("ex command: %s\n", excmd);
-					// process ex command
-					if (!strcmp(excmd, "q"))
-					{
-						glutLeaveMainLoop();
-					}
-
-					clrstatus();
-
 					uimode = NORMAL;
 					clrstatus();
+
+					doex();
+
 					break;
 				}
 				default:
