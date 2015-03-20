@@ -54,6 +54,8 @@ extern int timelast;
 extern int timebase;
 
 
+extern color color_fg;
+
 extern color colors[18];
 
 

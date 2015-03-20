@@ -68,7 +68,6 @@ fthread* newfthread(unsigned int team, int x, int y, int dx, int dy, int flag)
 		cfthread->alive = GHOST;
 	}
 	
-	field[y][x].fg = &colors[1];//cfthread->team*2+1;
 	field[y][x].bg = &colors[cfthread->team*2+1];
 	
 	//cthread = id;
@@ -362,7 +361,6 @@ int execinstr(fthread* cfthread, cell* ccell)
 				killfthread(cfthread->i);
 				cfthread->x = wrap(cfthread->x - cfthread->dx, CWIDTH);
 				cfthread->y = wrap(cfthread->y - cfthread->dy, CHEIGHT);
-				ccell->fg = &colors[1];
 				ccell->bg = &colors[cfthread->team*2];
 				break;
 			}
@@ -610,7 +608,6 @@ int execinstr(fthread* cfthread, cell* ccell)
 		cfthread->x = wrap(cfthread->x + cfthread->dx*cfthread->delta, CWIDTH);
 		cfthread->y = wrap(cfthread->y + cfthread->dy*cfthread->delta, CHEIGHT);
 	}
-	field[cfthread->y][cfthread->x].fg = &colors[1];//cfthread->team*2+1;
 	field[cfthread->y][cfthread->x].bg = &colors[cfthread->team*2+1];
 	if (!cfthread->repeats) cfthread->delta=1;
 	//printf("id=%d, instr=%c, x=%d, y=%d, tos=%d\n", cfthread->i, ccell.instr, cfthread->x, cfthread->y, cfthread->stack[cfthread->stackidx-1]);
@@ -628,7 +625,7 @@ void* interpreter(void* threadid)
 		for (x=0; x<CWIDTH; x++)
 		{
 			field[y][x].instr = 0;
-			field[y][x].fg = NULL;
+			field[y][x].fg = &color_fg;
 			field[y][x].bg = NULL;
 		}
 	}
@@ -667,14 +664,13 @@ void* interpreter(void* threadid)
 				{
 					//cell ccell = ;
 					field[y2][x2].instr = cchar;
-					field[y2][x2].fg   = &colors[1];
-					field[y2][x2++].bg = &colors[(i+1)*2];
+					field[y2][x2++].bg = &colors[i*2];
 					x2%=CWIDTH;
 					break;
 				}
 			}
 		}
-		newfthread(i+1, x, y, 1, 0, 0);
+		newfthread(i, x, y, 1, 0, 0);
 		//y=y2-16;
 		fclose(fp);
 	
@@ -691,7 +687,6 @@ void* interpreter(void* threadid)
 			if (cfthread->alive != DEAD && (((run2 != PAUSED) && cfthread->mode == RUN) || cfthread->mode == STEP))
 			{
 				cell* ccell = &field[cfthread->y][cfthread->x];
-				field[cfthread->y][cfthread->x].fg = &colors[1];
 				field[cfthread->y][cfthread->x].bg = &colors[cfthread->team*2];
 				execinstr(cfthread, ccell);
 			}

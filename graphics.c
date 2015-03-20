@@ -44,11 +44,11 @@ int timebase=0;
 #define F0 0.0
 #define F1 1.0
 
+color color_fg = 
+	{F1,  F1,  F1,  1.0};
+
 color colors[18]=
 {
-	{B0,  B0,  B0,  1.0},
-	{F1,  F1,  F1,  1.0},
-	
 	{B1,  B0,  B0,  1.0},
 	{F1,  F0,  F0,  1.0},
 	
