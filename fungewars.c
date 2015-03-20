@@ -146,23 +146,6 @@ void focuscam(float x, float y)
 	ccdy = 0;
 }
 
-void mulzoom(float factor)
-{
-	float cxc=(cx+swidth/2)/charwidth;
-	float cyc=(cy+sheight/2)/charheight;
-	float ccxc=(ccx+swidth/2)/charwidth;
-	float ccyc=(ccy+sheight/2)/charheight;
-	
-	czoom*=factor;
-	swidth=rswidth/czoom;
-	sheight=rsheight/czoom;
-	
-	cx = cxc*charwidth-swidth/2;
-	cy = cyc*charheight-sheight/2;
-	ccx = ccxc*charwidth-swidth/2;
-	ccy = ccyc*charheight-sheight/2;
-}
-
 // process ex command
 void doex()
 {
@@ -402,12 +385,12 @@ void kb1(unsigned char key, int x, int y)
 
 			case '[': // zoom out
 			{
-				mulzoom(1.0/1.25);
+				czoom /= 1.25;
 				break;
 			}
 			case ']': // zoom in
 			{
-				mulzoom(1.25);
+				czoom *= 1.25;
 				break;
 			}
 		}
@@ -528,12 +511,12 @@ void kb2(int key, int x, int y)
 		}
 		case 3:
 		{
-			mulzoom(1.0/1.25);
+			czoom /= 1.25;
 			break;
 		}
 		case 4:
 		{
-			mulzoom(1.25);
+			czoom *= 1.25;
 			break;
 		}
 		case 8:
@@ -627,7 +610,7 @@ void idle(void)
 {
 	if (keys[357] || ((uimode == NORMAL || uimode == VISUAL) && (keys['k'] || keys['w'] || keys['W'])))
 	{
-		cy+=(3.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/czoom;
+		cy+=(3.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/cczoom;
 		if (cthread != ghostid)
 		{
 			cthread = -1;
@@ -643,7 +626,7 @@ void idle(void)
 	}
 	if (keys[356] || ((uimode == NORMAL || uimode == VISUAL) && (keys['h'] || keys['a'] || keys['A'])))
 	{
-		cx-=(3.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/czoom;
+		cx-=(3.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/cczoom;
 		if (cthread != ghostid) cthread = -1;
 		else
 		{
@@ -656,7 +639,7 @@ void idle(void)
 	}
 	if (keys[359] || ((uimode == NORMAL || uimode == VISUAL) && (keys['j'] || keys['s'] || keys['S'])))
 	{
-		cy-=(3.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/czoom;
+		cy-=(3.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/cczoom;
 		if (cthread != ghostid) cthread = -1;
 		else
 		{
@@ -669,7 +652,7 @@ void idle(void)
 	}
 	if (keys[358] || ((uimode == NORMAL || uimode == VISUAL) && (keys['l'] || keys['d'] || keys['D'])))
 	{
-		cx+=(3.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/czoom;
+		cx+=(3.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/cczoom;
 		if (cthread != ghostid) cthread = -1;
 		else
 		{

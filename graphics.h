@@ -31,6 +31,7 @@ extern float czoom;
 
 extern float ccx;
 extern float ccy;
+extern float cczoom;
 
 extern float ccdx;
 extern float ccdy;

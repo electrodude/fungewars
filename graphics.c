@@ -16,6 +16,7 @@ float czoom=1.0;
 
 float ccx=0.0;
 float ccy=0.0;
+float cczoom=1.0;
 
 float ccdx=0.0;
 float ccdy=0.0;
@@ -272,8 +273,21 @@ void glputcell(float x, float y, cell* c)
 
 void display(void)
 {	
-	swidth=rswidth/czoom;
-	sheight=rsheight/czoom;
+	if (cczoom<czoom) cczoom*=sqrt(czoom/cczoom);
+	if (cczoom>czoom) cczoom/=sqrt(cczoom/czoom);
+
+	float cxc = (cx+swidth/2)/charwidth;
+	float cyc = (cy+sheight/2)/charheight;
+	float ccxc = (ccx+swidth/2)/charwidth;
+	float ccyc = (ccy+sheight/2)/charheight;
+
+	swidth=rswidth/cczoom;
+	sheight=rsheight/cczoom;
+
+	cx = cxc*charwidth-swidth/2;
+	cy = cyc*charheight-sheight/2;
+	ccx = ccxc*charwidth-swidth/2;
+	ccy = ccyc*charheight-sheight/2;
 	
 	if (cthread >= 0)
 	{
@@ -318,11 +332,12 @@ void display(void)
 	{
 		if (ccx<cx) ccx+=sqrt(cx-ccx);
 		if (ccx>cx) ccx-=sqrt(ccx-cx);
+
 		if (ccy<cy) ccy+=sqrt(cy-ccy);
 		if (ccy>cy) ccy-=sqrt(ccy-cy);
 	}
 
-	
+
 	/*
 	if (ccx != cx || ccy != cy)
 	{
@@ -352,7 +367,7 @@ void display(void)
 
 	glPushMatrix();
 
-	glScalef(czoom, czoom, 1);
+	glScalef(cczoom, cczoom, 1);
 
 	// board contents
 	int x;
@@ -475,8 +490,12 @@ void reshape(int width, int height)
 */
 void reshape(int w, int h)
 {
-	swidth = (rswidth=w)/czoom;
-	sheight = (rsheight=h)/czoom;
+	rswidth = w;
+	rsheight = h;
+
+	swidth = rswidth/cczoom;
+	sheight = rsheight/cczoom;
+
 	GLdouble size;
 	GLdouble aspect;
 	
