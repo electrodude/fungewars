@@ -89,8 +89,19 @@ int wrap(int x, int m);
 
 void newgame();
 
-void clrstatus();
+void setstatus_color(int i, char c, color* fg, color* bg);
+
+void setstatus_c(int i, char c);
 
 void setstatus(const char* s);
+
+void clrstatus();
+
+void focusthread(fthread* cfthread);
+
+void focuscam(float x, float y);
+
+void docmd(char* cmd);
+
 
 int main(int argc, char** argv);

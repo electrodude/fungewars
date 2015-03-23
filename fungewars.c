@@ -147,52 +147,64 @@ void focuscam(float x, float y)
 }
 
 // process command
-void docmd()
+void docmd(char* cmd)
 {
-	printf("ex command: %s\n", excmd);
-
-	char* cmd = strtok(excmd, " ");
-
-	if (cmd == NULL)
+	switch (excmd[0])
 	{
-		return;
-	}
+		case ':':
+		{
+			printf("ex command: %s\n", cmd);
 
-	if (!strcmp(cmd, "q"))
-	{
-		glutLeaveMainLoop();
-	}
+			char* cmdname = strtok(&cmd[1], " ");
 
-	if (!strcmp(cmd, "load"))
-	{
-		char* path = strtok(NULL, " ");
-		char* team_s = strtok(NULL, " ");
-		if (path == NULL)
-		{
-			setstatus("Usage: load <path> <team id>");
-			return;
-		}
-		int team;
-		if (team_s == NULL)
-		{
-			team = -1;
-		}
-		else
-		{
-			team = atoi(team_s);
-		}
-		int status = loadwarrior(xi, yi, team, path);
-		switch (status)
-		{
-			case 0:
+			if (cmdname == NULL)
 			{
-				break;
+				return;
 			}
-			case 1:
+
+			if (!strcmp(cmdname, "q"))
 			{
-				setstatus("Could not open file for reading.");
-				break;
+				glutLeaveMainLoop();
 			}
+
+			if (!strcmp(cmdname, "load"))
+			{
+				char* path = strtok(NULL, " ");
+				char* team_s = strtok(NULL, " ");
+				if (path == NULL)
+				{
+					setstatus("Usage: load <path> <team id>");
+					return;
+				}
+				int team;
+				if (team_s == NULL)
+				{
+					team = -1;
+				}
+				else
+				{
+					team = atoi(team_s);
+				}
+				int status = loadwarrior(xi, yi, team, path);
+				switch (status)
+				{
+					case 0:
+					{
+						break;
+					}
+					case 1:
+					{
+						setstatus("Could not open file for reading.");
+						break;
+					}
+				}
+			}
+			break;
+		}
+		case '/':
+		{
+			printf("search: %s\n", &cmd[1]);
+			break;
 		}
 	}
 
@@ -314,11 +326,11 @@ void kb1(unsigned char key, int x, int y)
 			{
 				case 8:
 				{
-					setstatus_color(exlen, ' ', &color_status_fg, &color_clear);
+					setstatus_color(--exlen, ' ', &color_status_fg, &color_clear);
 
 					if (exlen > 0)
 					{
-						excmd[--exlen] = 0;
+						excmd[exlen] = 0;
 					}
 					else
 					{
@@ -333,14 +345,14 @@ void kb1(unsigned char key, int x, int y)
 					uimode = NORMAL;
 					clrstatus();
 
-					docmd();
+					docmd(excmd);
 
 					break;
 				}
 				default:
 				{
-					excmd[exlen++] = key;
-					setstatus_c(exlen, key);
+					excmd[exlen] = key;
+					setstatus_c(exlen++, key);
 
 					if (exlen >= exmax)
 					{
@@ -359,12 +371,15 @@ void kb1(unsigned char key, int x, int y)
 	{
 		switch (key)
 		{
+			case '/':
 			case ':':
 			{
 				clrstatus();
 				uimode = EX;
-				setstatus_c(0, ':');
-				excmd[0] = 0;
+				setstatus_c(0, key);
+				excmd[0] = key;
+				excmd[1] = 0;
+				exlen = 1;
 				break;
 			}
 
