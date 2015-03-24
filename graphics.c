@@ -376,11 +376,34 @@ void display(void)
 		}
 	}
 	glDisable(GL_TEXTURE_2D);
+
+	// current search result
+	if (search_curr_result != NULL)
+	{
+		search_curr_result->refs++; // make sure this result doesn't get GC'd while we're drawing it
+
+		search_cell* curr = search_curr_result->this;
+
+		glColor4f(0.0, 1.0, 0.0, 1.0);
+		glLineWidth(3.0);
+		glBegin(GL_LINE_STRIP);
+		while (curr != NULL)
+		{
+			glVertex2f(curr->x*charwidth - ccx + charwidth/2, curr->y*charheight - ccy + charheight/2);
+
+			curr = curr->next;
+		}
+
+		glEnd();
+
+		search_result_kill(search_curr_result);
+	}
 	
 	// crosshairs
 	float chx = xi*charwidth  + charwidth/2  - ccx;
 	float chy = yi*charheight + charheight/2 - ccy;
 	
+	glLineWidth(1.0);
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 	glBegin(GL_LINES);
 	glVertex2f(chx, 0.0);

@@ -146,6 +146,398 @@ void focuscam(float x, float y)
 	ccdy = 0;
 }
 
+
+search_result* search_first_result;
+
+search_result* search_curr_result;
+
+int search_status[CHEIGHT][CWIDTH];
+
+int nallocs = 0; // to check for leaks
+
+void search_result_new(search_cell* first_cell)
+{
+
+	//printf("found %c at (%d, %d)\n", first_cell->fc, first_cell->x, first_cell->y);
+
+	search_result* second_result = search_first_result;
+
+	search_first_result = (search_result*)malloc(sizeof(search_result));
+
+	search_first_result->refs = 1;
+
+	search_first_result->next = second_result;
+
+	search_first_result->this = first_cell;
+
+	first_cell->refs++;
+
+	nallocs++;
+
+	// we don't have to kill(second_result) because we didn't refs++ it
+}
+
+void search_result_kill(search_result* this)
+{
+	if (this == NULL)
+	{
+		return;
+	}
+
+	if (--this->refs > 0)
+	{
+		return;
+	}
+
+	if (this->this != NULL)
+	{
+		search_cell_kill(this->this);
+	}
+
+	if (this->next != NULL)
+	{
+		search_result_kill(this->next);
+	}
+
+	nallocs--;
+
+	free(this);
+}
+
+search_cell* search_cell_new(search_cell* parent, int x, int y, int dx, int dy, char fc, char pc)
+{
+	search_cell* this = (search_cell*)malloc(sizeof(search_cell));
+
+	if (parent != NULL)
+	{
+		parent->refs++;
+	}
+
+	this->next = parent;
+
+	this->refs = 1;
+
+	this->x = x;
+	this->y = y;
+	this->dx = dx;
+	this->dy = dy;
+
+	this->fc = fc;
+	this->pc = pc;
+
+	nallocs++;
+
+	return this;
+}
+
+void search_cell_kill(search_cell* this)
+{
+	if (this == NULL)
+	{
+		return;
+	}
+
+	if (--this->refs > 0)
+	{
+		return;
+	}
+
+	if (this->refs < 0)
+	{
+		printf("warning: double free!\n");
+	}
+
+	search_cell_kill(this->next);
+
+	nallocs--;
+
+	free(this);
+}
+
+int search_match(const char** pattern, char target)
+{
+	if (**pattern == target)
+	{
+		(*pattern)++;
+		return 1;
+	}
+	return 0;
+}
+
+void search2(search_cell* parent, int x, int y, int dx, int dy, const char* pattern)
+{
+	x = wrap(x, CWIDTH);
+	y = wrap(y, CHEIGHT);
+
+	char pc = *pattern;
+	char fc = field[y][x].instr;
+
+	//printf("search2(%d, %d, %d, %d, '%c'): '%c'\n", x, y, dx, dy, pc, fc);
+
+	if (search_status[y][x] & SEARCH_VISITED)
+	{
+		return;
+	}
+
+
+	if (pc == 0)
+	{
+		search_result_new(parent);
+		return;
+	}
+
+	search_status[y][x] |= SEARCH_VISITED;
+
+	search_cell* this = search_cell_new(parent, x, y, dx, dy, fc, pc);
+
+	const char* nextpc = pattern;
+
+	int matched = 0;
+
+#define MATCHCHAR(c) { if (!matched && pc == c) { matched = 1; nextpc++; }}
+#define MATCHDIR(dx2, dy2, c) { if (dx == dx2 && dy == dy2) { MATCHCHAR(c) }}
+
+	MATCHCHAR(fc)
+
+	switch (fc)
+	{
+		case '>':
+		{
+			MATCHDIR( 0,-1, '[')
+			MATCHDIR( 0, 1, ']')
+			MATCHDIR(-1, 0, 'r')
+			search2(this, x+1, y+0,  1,  0, nextpc);
+			break;
+		}
+		case '<':
+		{
+			MATCHDIR( 0, 1, '[')
+			MATCHDIR( 0,-1, ']')
+			MATCHDIR( 1, 0, 'r')
+			search2(this, x-1, y+0, -1,  0, nextpc);
+			break;
+		}
+		case 'v':
+		{
+			MATCHDIR(-1, 0, '[')
+			MATCHDIR( 1, 0, ']')
+			MATCHDIR( 0, 1, 'r')
+			search2(this, x+0, y-1,  0, -1, nextpc);
+			break;
+		}
+		case '^':
+		{
+			MATCHDIR( 1, 0, '[')
+			MATCHDIR(-1, 0, ']')
+			MATCHDIR( 0,-1, 'r')
+			search2(this, x+0, y+1,  0,  1, nextpc);
+			break;
+		}
+
+		case '[':
+		{
+			MATCHDIR( 0, 1, '<')
+			MATCHDIR( 0,-1, '>')
+			MATCHDIR( 1, 0, '^')
+			MATCHDIR(-1, 0, 'v')
+			search2(this, x-dy, y+dx, -dy, dx, nextpc);
+			break;
+		}
+		case ']':
+		{
+			MATCHDIR( 0, 1, '>')
+			MATCHDIR( 0,-1, '<')
+			MATCHDIR( 1, 0, 'v')
+			MATCHDIR(-1, 0, '^')
+			search2(this, x+dy, y-dx, dy, -dx, nextpc);
+			break;
+		}
+
+		case 'r':
+		{
+			MATCHDIR( 0, 1, 'v')
+			MATCHDIR( 0,-1, '^')
+			MATCHDIR( 1, 0, '<')
+			MATCHDIR(-1, 0, '>')
+			search2(this, x-dx, y-dy, -dx, -dy, nextpc);
+			break;
+		}
+
+		case '#':
+		case 's':
+		case '\'':
+		{
+			search2(this, x+2*dx, y+2*dy, dx, dy, nextpc);
+			break;
+		}
+
+		case 0:
+		case 'z':	// z is still a nop, right?
+		case ' ':
+		{
+			search2(this, x+dx, y+dy, dx, dy, nextpc);
+			break;
+		}
+
+		case '?':
+		{
+			search2(this, x+1, y+0,  1,  0, nextpc);
+			search2(this, x-1, y+0, -1,  0, nextpc);
+			search2(this, x+0, y+1,  0,  1, nextpc);
+			search2(this, x+0, y-1,  0, -1, nextpc);
+			break;
+		}
+
+		case 't':
+		{
+			search2(this, x+dx, y+dy, dx, dy, nextpc);
+			search2(this, x-dx, y-dy, -dx, -dy, nextpc);
+			break;
+		}
+
+
+		default:
+		{
+			if (!matched)
+			{
+				break;
+			}
+			search2(this, x+dx, y+dy, dx, dy, nextpc);
+			break;
+		}
+	}
+
+	search_status[y][x] &= !SEARCH_VISITED;
+
+	search_cell_kill(this);
+}
+
+void search(const char* pattern)
+{
+	for (int y=0; y<CHEIGHT; y++)
+	{
+		for (int x=0; x<CWIDTH; x++)
+		{
+			search_status[y][x] = 0;
+		}
+	}
+
+	search_result_kill(search_first_result);
+	search_first_result = NULL;
+
+	search_result_kill(search_curr_result);
+	search_curr_result = NULL;
+
+	if (nallocs)
+	{
+		printf("Warning: memory leak! nallocs = %d\n", nallocs);
+	}
+
+	if (!*pattern)
+	{
+		return;
+	}
+
+	int x=xi;
+	int y=yi;
+
+	int endx = wrap(xi, CWIDTH) - 1;
+	int endy = wrap(yi, CHEIGHT);
+
+	if (endx < 0)
+	{
+		endx += CWIDTH;
+		endy--;
+		if (endy<0)
+		{
+			endy += CHEIGHT;
+		}
+	}
+
+	printf("presearch: (%d, %d), (%d, %d)\n", x, y, endx, endy);
+
+	for (;; y = wrap(y+1, CHEIGHT))
+	{
+		//printf("search row: %d\n", y);
+		for (; x<CWIDTH; x++)
+		{
+			//printf("search: %d, %d\n", x, y);
+			if (field[y][x].instr == *pattern)
+			{
+				for (int d=0; d<=3; d++)
+				{
+					if ( (d==0 && (*pattern == '<' || *pattern == '^' || *pattern == 'v'))
+					  || (d==1 && (*pattern == 'v' || *pattern == '<' || *pattern == '>'))
+					  || (d==2 && (*pattern == '>' || *pattern == '^' || *pattern == 'v'))
+					  || (d==3 && (*pattern == '^' || *pattern == '<' || *pattern == '>')))
+					{
+						continue;
+					}
+
+					int dx;
+					int dy;
+					switch (d)
+					{
+						case 0:
+						{
+							dx = 1;
+							dy = 0;
+							break;
+						}
+						case 1:
+						{
+							dx = 0;
+							dy = 1;
+							break;
+						}
+						case 2:
+						{
+							dx = -1;
+							dy = 0;
+							break;
+						}
+						case 3:
+						{
+							dx = 0;
+							dy = -1;
+							break;
+						}
+					}
+
+					//printf("search: %d, %d, %d\n", x, y, d);
+
+					search_cell* this = search_cell_new(NULL, x, y, dx, dy, *pattern, *pattern);
+
+					search2(this, x+dx, y+dy, dx, dy, pattern+1);
+
+					search_cell_kill(this);
+				}
+			}
+			if (x == endx && y == endy)
+			{
+				goto search_done;
+			}
+		}
+		x=0;
+	}
+
+search_done:
+
+	search_curr_result = search_first_result;
+
+	if (search_first_result == NULL)
+	{
+		setstatus("No results");
+	}
+	else
+	{
+
+		focuscam(search_curr_result->this->x*charwidth, search_curr_result->this->y*charheight);
+		search_curr_result->refs++;
+	}
+
+}
+
 // process command
 void docmd(char* cmd)
 {
@@ -199,11 +591,17 @@ void docmd(char* cmd)
 					}
 				}
 			}
+
+			if (!strcmp(cmdname, "noh"))
+			{
+				search_curr_result = NULL;
+			}
 			break;
 		}
 		case '/':
 		{
 			printf("search: %s\n", &cmd[1]);
+			search(&cmd[1]);
 			break;
 		}
 	}
@@ -406,6 +804,41 @@ void kb1(unsigned char key, int x, int y)
 			case ']': // zoom in
 			{
 				czoom *= 1.25;
+				break;
+			}
+
+			case 'n': // next search result
+			{
+				setstatus(excmd);
+				if (search_curr_result != NULL)
+				{
+					search_result* next = search_curr_result->next;
+					//search_result_kill(search_curr_result);
+
+					search_curr_result = next;
+
+					if (search_curr_result == NULL)
+					{
+						setstatus("Search wrapped around");
+					}
+				}
+
+				if (search_curr_result == NULL)
+				{
+					search_curr_result = search_first_result;
+					//setstatus("Restart results");
+				}
+
+				if (search_first_result == NULL)
+				{
+					setstatus("No results");
+				}
+
+				if (search_curr_result != NULL)
+				{
+					focuscam(search_curr_result->this->x*charwidth, search_curr_result->this->y*charheight);
+					//search_curr_result->refs++;
+				}
 				break;
 			}
 		}

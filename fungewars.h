@@ -85,6 +85,49 @@ extern int yi;
 extern int xiv;
 extern int yiv;
 
+// search
+
+#define SEARCH_VISITED 0x1
+
+typedef struct search_cell
+{
+	struct search_cell* next;
+	int x;
+	int y;
+	int dx;
+	int dy;
+
+	char fc;
+	char pc;
+
+	int refs;
+} search_cell;
+
+typedef struct search_result
+{
+	struct search_result* next;
+	search_cell* this;
+
+	int refs;
+} search_result;
+
+
+extern search_result* search_first_result;
+
+extern search_result* search_curr_result;
+
+
+void search_result_new(search_cell* first_cell);
+
+void search_result_kill(search_result* this);
+
+search_cell* search_cell_new(search_cell* parent, int x, int y, int dx, int dy, char fc, char pc);
+
+void search_cell_kill(search_cell* this);
+
+
+
+
 int wrap(int x, int m);
 
 void newgame();
