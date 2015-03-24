@@ -65,6 +65,8 @@ typedef struct
 	int y;
 } coord;
 
+extern coord marks[256];
+
 extern pthread_mutex_t fthreadsmutex;
 
 extern cell field[CHEIGHT][CWIDTH];
@@ -74,7 +76,10 @@ extern unsigned int fthreadslen;
 
 extern int cthread;
 
-enum {NORMAL, EX, SREPLACE, REPLACE, VISUAL, INSERT} uimode;
+typedef enum {NORMAL, EX, SREPLACE, REPLACE, VISUAL, INSERT, MARK_SET, MARK_GET} uimode_t;
+
+extern uimode_t uimode;
+extern uimode_t uiprevmode;
 
 extern cell* statusline;
 extern int statuslinelen;

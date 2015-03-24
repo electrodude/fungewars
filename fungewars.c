@@ -37,7 +37,8 @@ cell field[CHEIGHT][CWIDTH];
 
 int cthread = -1;
 
-//enum {NORMAL, EX, SREPLACE, REPLACE, VISUAL, INSERT} uimode = NORMAL;
+uimode_t uimode;
+uimode_t uiprevmode;
 
 char uilastcmd = 0;
 
@@ -54,6 +55,8 @@ int yi;
 int xiv;
 int yiv;
 
+
+coord marks[256];
 
 pthread_t threads[NUM_THREADS];
 pthread_mutex_t fthreadsmutex;
@@ -614,7 +617,6 @@ void kb1(unsigned char key, int x, int y)
 {
 	modkeys = glutGetModifiers();
 	//printf("%d down\n", key);
-	keys[key] = 1;
 	
 	int t1;
 	if (key == 27)
@@ -624,9 +626,11 @@ void kb1(unsigned char key, int x, int y)
 		{
 			statusline[i].instr = ' ';
 		}
-		uimode = NORMAL;
+		uimode = uiprevmode;
+		uiprevmode = NORMAL;
 		clrstatus();
 	}
+
 	switch (uimode)
 	{
 		case NORMAL:
@@ -658,6 +662,15 @@ void kb1(unsigned char key, int x, int y)
 					break;
 				}
 
+
+				case 'm': // set mark
+				{
+					uiprevmode = uimode; // = NORMAL
+					uimode = MARK_SET;
+					break;
+				}
+
+
 				case ' ': // step
 				{
 					run = STEP;
@@ -668,6 +681,13 @@ void kb1(unsigned char key, int x, int y)
 				case '\n':
 				{
 					run = (run==RUN) ? PAUSED : RUN;
+					break;
+				}
+
+
+				default:
+				{
+					keys[key] = 1;
 					break;
 				}
 			}
@@ -717,6 +737,12 @@ void kb1(unsigned char key, int x, int y)
 				{
 					break;
 				}
+
+				default:
+				{
+					keys[key] = 1;
+					break;
+				}
 			}
 			break;
 		}
@@ -763,6 +789,34 @@ void kb1(unsigned char key, int x, int y)
 					break;
 				}
 			}
+			break;
+		}
+
+		case MARK_SET:
+		{
+			marks[key].x = xi;
+			marks[key].y = yi;
+
+			uimode = uiprevmode; // = NORMAL
+			uiprevmode = NORMAL;
+			break;
+		}
+
+		case MARK_GET:
+		{
+			int x = marks[key].x;
+			int y = marks[key].y;
+			if (x>=0 && y>=0 && x<CWIDTH && y<CHEIGHT)
+			{
+				focuscam(x, y);
+			}
+			else
+			{
+				setstatus("Mark not set");
+			}
+
+			uimode = uiprevmode;
+			uiprevmode = NORMAL;
 			break;
 		}
 	}
@@ -841,6 +895,14 @@ void kb1(unsigned char key, int x, int y)
 					focuscam(search_curr_result->this->x, search_curr_result->this->y);
 					//search_curr_result->refs++;
 				}
+				break;
+			}
+
+
+			case '\'': // go to mark
+			{
+				uiprevmode = uimode;
+				uimode = MARK_GET;
 				break;
 			}
 		}
@@ -1151,6 +1213,14 @@ int main(int argc, char** argv)
 	clrstatus();
 
 	newgame();
+
+	uimode = uiprevmode = NORMAL;
+
+	for (int i=0; i<256; i++)
+	{
+		marks[i].x = -1;
+		marks[i].y = -1;
+	}
 	
 	//glutMainLoop();
 	
