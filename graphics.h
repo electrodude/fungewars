@@ -64,24 +64,8 @@ GLuint png_texture_load(const char* file_name, int* width, int* height);
 
 void glputc(float x, float y, int c);
 
-void focusthread(fthread* cfthread);
-
-void focuscam(float x, float y);
-
-void mulzoom(float factor);
-
 void display(void);
 
 void reshape(int width, int height);
-
-void kb1(unsigned char key, int x, int y);
-
-void kb1u(unsigned char key, int x, int y);
-
-void kb2(int key, int x, int y);
-
-void kb2u(int key, int x, int y);
-
-void idle(void);
 
 void gl_init();

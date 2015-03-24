@@ -64,7 +64,7 @@ int wrap(int x, int m)
 	return (c<0)?(c+m):c;
 }
 
-void newgame()
+void newgame(void)
 {
 	unsigned int i;
 	for (i=0; i<fthreadslen; i++)
@@ -117,7 +117,7 @@ void setstatus(const char* s)
 	}
 }
 
-void clrstatus()
+void clrstatus(void)
 {
 	for (int i=0; i<statuslinelen; i++)
 	{
@@ -138,10 +138,12 @@ void focusthread(fthread* cfthread)
 	//delay = 100000;
 }
 
-void focuscam(float x, float y)
+void focuscam(int x, int y)
 {
-	cx = x - swidth/2;
-	cy = y - sheight/2;
+	xi = x;
+	yi = y;
+	cx = x*charwidth - swidth/2;
+	cy = y*charheight - sheight/2;
 	ccdx = 0;
 	ccdy = 0;
 }
@@ -532,7 +534,7 @@ search_done:
 	else
 	{
 
-		focuscam(search_curr_result->this->x*charwidth, search_curr_result->this->y*charheight);
+		focuscam(search_curr_result->this->x, search_curr_result->this->y);
 		search_curr_result->refs++;
 	}
 
@@ -836,7 +838,7 @@ void kb1(unsigned char key, int x, int y)
 
 				if (search_curr_result != NULL)
 				{
-					focuscam(search_curr_result->this->x*charwidth, search_curr_result->this->y*charheight);
+					focuscam(search_curr_result->this->x, search_curr_result->this->y);
 					//search_curr_result->refs++;
 				}
 				break;
@@ -860,7 +862,7 @@ void kb1(unsigned char key, int x, int y)
 			}
 			else
 			{
-				focuscam(fthreads[cthread].x*charwidth, fthreads[cthread].y*charheight);
+				focuscam(fthreads[cthread].x, fthreads[cthread].y);
 			}
 
 			printf("follow %d\n", cthread);
@@ -886,7 +888,7 @@ void kb1(unsigned char key, int x, int y)
 			}
 			else
 			{
-				focuscam(fthreads[cthread].x*charwidth, fthreads[cthread].y*charheight);
+				focuscam(fthreads[cthread].x, fthreads[cthread].y);
 			}
 			
 			printf("follow %d\n", cthread);

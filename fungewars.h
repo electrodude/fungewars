@@ -130,7 +130,7 @@ void search_cell_kill(search_cell* this);
 
 int wrap(int x, int m);
 
-void newgame();
+void newgame(void);
 
 void setstatus_color(int i, char c, color* fg, color* bg);
 
@@ -138,13 +138,22 @@ void setstatus_c(int i, char c);
 
 void setstatus(const char* s);
 
-void clrstatus();
+void clrstatus(void);
 
 void focusthread(fthread* cfthread);
 
-void focuscam(float x, float y);
+void focuscam(int x, int y);
 
 void docmd(char* cmd);
 
+void kb1(unsigned char key, int x, int y);
+
+void kb1u(unsigned char key, int x, int y);
+
+void kb2(int key, int x, int y);
+
+void kb2u(int key, int x, int y);
+
+void idle(void);
 
 int main(int argc, char** argv);
