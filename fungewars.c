@@ -27,7 +27,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int keys[512];
+int keys[N_KEYS];
 int modkeys;
 
 fthread* fthreads;
@@ -56,7 +56,7 @@ int xiv;
 int yiv;
 
 
-coord marks[256];
+coord marks[N_KEYS];
 
 pthread_t threads[NUM_THREADS];
 pthread_mutex_t fthreadsmutex;
@@ -613,14 +613,16 @@ void docmd(char* cmd)
 
 }
 
-void kb1(unsigned char key, int x, int y)
+void keydown(unsigned int key, int x, int y)
 {
-	modkeys = glutGetModifiers();
-	//printf("%d down\n", key);
-	
+	printf("key down: %d\n", key);
+
+	int keyused = 0;
+
 	int t1;
 	if (key == 27)
 	{
+		keyused = 1;
 
 		for (int i=0; i<exlen+1; i++)
 		{
@@ -642,18 +644,21 @@ void kb1(unsigned char key, int x, int y)
 				// mode switching
 				case 'r': // single character replace mode
 				{
+					keyused = 1;
 					uimode = SREPLACE;
 					setstatus("-- CHAR REPLACE --");
 					break;
 				}
 				case 'R': // replace mode
 				{
+					keyused = 1;
 					uimode = REPLACE;
 					setstatus("-- REPLACE --");
 					break;
 				}
 				case 'v': // visual mode
 				{
+					keyused = 1;
 					xiv = xi;
 					yiv = yi;
 
@@ -665,6 +670,7 @@ void kb1(unsigned char key, int x, int y)
 
 				case 'm': // set mark
 				{
+					keyused = 1;
 					uiprevmode = uimode; // = NORMAL
 					uimode = MARK_SET;
 					break;
@@ -673,6 +679,7 @@ void kb1(unsigned char key, int x, int y)
 
 				case ' ': // step
 				{
+					keyused = 1;
 					run = STEP;
 					break;
 				}
@@ -680,14 +687,9 @@ void kb1(unsigned char key, int x, int y)
 				case '\r':
 				case '\n':
 				{
+					keyused = 1;
+
 					run = (run==RUN) ? PAUSED : RUN;
-					break;
-				}
-
-
-				default:
-				{
-					keys[key] = 1;
 					break;
 				}
 			}
@@ -695,9 +697,13 @@ void kb1(unsigned char key, int x, int y)
 		}
 		case SREPLACE:
 		{
-			field[yi][xi].instr = key;
-			uimode = NORMAL;
-			clrstatus();
+			if (key < 256)
+			{
+				keyused = 1;
+				field[yi][xi].instr = key;
+				uimode = NORMAL;
+				clrstatus();
+			}
 			break;
 		}
 		case REPLACE:
@@ -722,8 +728,12 @@ void kb1(unsigned char key, int x, int y)
 				}
 				default:
 				{
-					field[yi][xi].instr = key;
-					break;
+					if (key < 256)
+					{
+						keyused = 1;
+						field[yi][xi].instr = key;
+						break;
+					}
 				}
 			}
 
@@ -735,12 +745,7 @@ void kb1(unsigned char key, int x, int y)
 			{
 				case ' ': // flip selection (board wrap)
 				{
-					break;
-				}
-
-				default:
-				{
-					keys[key] = 1;
+					keyused = 1;
 					break;
 				}
 			}
@@ -765,9 +770,39 @@ void kb1(unsigned char key, int x, int y)
 					}
 					break;
 				}
+
+				case 357: // up
+				{
+					keyused = 1;
+					break;
+				}
+				case 359: // down
+				{
+					keyused = 1;
+					break;
+				}
+				case 356: // left
+				{
+					keyused = 1;
+					break;
+				}
+				case 358: // right
+				{
+					keyused = 1;
+					break;
+				}
+
+				case 9: // tab
+				{
+					keyused = 1;
+					break;
+				}
+
 				case '\r':
 				case '\n':
 				{
+					keyused = 1;
+
 					uimode = NORMAL;
 					clrstatus();
 
@@ -777,15 +812,20 @@ void kb1(unsigned char key, int x, int y)
 				}
 				default:
 				{
-					excmd[exlen] = key;
-					setstatus_c(exlen++, key);
-
-					if (exlen >= exmax)
+					if (key < 256)
 					{
-						excmd = (char*)realloc(excmd, exmax*=2);
-						printf("resize ex buffer to %d bytes\n", exmax);
+						keyused = 1;
+
+						excmd[exlen] = key;
+						setstatus_c(exlen++, key);
+
+						if (exlen >= exmax)
+						{
+							excmd = (char*)realloc(excmd, exmax*=2);
+							printf("resize ex buffer to %d bytes\n", exmax);
+						}
+						excmd[exlen] = 0;
 					}
-					excmd[exlen] = 0;
 					break;
 				}
 			}
@@ -989,49 +1029,30 @@ void kb1(unsigned char key, int x, int y)
 			}
 			break;
 		}
-	}
 
-	uilastcmd = key;
-	//glutPostRedisplay();
-}
-
-void kb1u(unsigned char key, int x, int y)
-{
-	modkeys = glutGetModifiers();
-	//printf("%d up\n", key);
-	keys[key] = 0;
-}
-
-void kb2(int key, int x, int y)
-{
-	modkeys = glutGetModifiers();
-	//printf("%d down\n", key+256);
-	keys[key+256] = 1;
-	switch (key)
-	{
-		case 1:
+		case 1+256:
 		{
 			if (delay>1) delay/=2;
 			printf("delay: %d\n", delay);
 			break;
 		}
-		case 2:
+		case 2+256:
 		{
 			if (delay<2000000) delay*=2;;
 			printf("delay: %d\n", delay);
 			break;
 		}
-		case 3:
+		case 3+256:
 		{
 			czoom /= 1.25;
 			break;
 		}
-		case 4:
+		case 4+256:
 		{
 			czoom *= 1.25;
 			break;
 		}
-		case 8:
+		case 8+256:
 		{
 			run = (run==RUN) ? PAUSED : RUN;
 			break;
@@ -1045,12 +1066,12 @@ void kb2(int key, int x, int y)
 		{
 			switch (key)
 			{
-				case 5:
+				case 5+256:
 				{
 					cfthread.mode = STEP;
 					break;
 				}
-				case 6:
+				case 6+256:
 				{
 					printf("stack trace for thread %d:\n", cthread);
 					int i;
@@ -1060,12 +1081,12 @@ void kb2(int key, int x, int y)
 					}
 					break;
 				}
-				case 7:
+				case 7+256:
 				{
 					cthread = -1;
 					break;
 				}
-				case 9:
+				case 9+256:
 				{
 					cfthread.mode = (cfthread.mode==RUN) ? PAUSED : RUN; 
 					break;
@@ -1081,12 +1102,12 @@ void kb2(int key, int x, int y)
 	{
 		switch (key)
 		{
-			case 5:
+			case 5+256:
 			{
 				run = STEP;
 				break;
 			}
-			case 7:
+			case 7+256:
 			{
 				cthread = getfthread(xi, yi);
 
@@ -1098,7 +1119,7 @@ void kb2(int key, int x, int y)
 				}
 				break;
 			}
-			case 9:
+			case 9+256:
 			{	run = (run==RUN) ? PAUSED : RUN; 
 				break;
 			}
@@ -1109,12 +1130,36 @@ void kb2(int key, int x, int y)
 		}
 	}
 	//pthread_mutex_unlock(&fthreadsmutex);
+
+	uilastcmd = key;
+
+	if (!keyused)
+	{
+		keys[key] = 1;
+	}
+}
+
+void kb1(unsigned char key, int x, int y)
+{
+	modkeys = glutGetModifiers();
+	keydown(key, x, y);
+}
+
+void kb1u(unsigned char key, int x, int y)
+{
+	modkeys = glutGetModifiers();
+	keys[key] = 0;
+}
+
+void kb2(int key, int x, int y)
+{
+	modkeys = glutGetModifiers();
+	keydown(key+256, x, y);
 }
 
 void kb2u(int key, int x, int y)
 {
 	modkeys = glutGetModifiers();
-	//printf("%d up\n", key+256);
 	keys[key+256] = 0;
 }
 
@@ -1216,7 +1261,7 @@ int main(int argc, char** argv)
 
 	uimode = uiprevmode = NORMAL;
 
-	for (int i=0; i<256; i++)
+	for (int i=0; i<N_KEYS; i++)
 	{
 		marks[i].x = -1;
 		marks[i].y = -1;

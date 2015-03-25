@@ -14,6 +14,8 @@
 #define CWIDTH 256
 #define CHEIGHT 256
 
+#define N_KEYS 512
+
 // should this be in graphics.h?
 typedef float color[4];
 
@@ -65,11 +67,13 @@ typedef struct
 	int y;
 } coord;
 
-extern coord marks[256];
+extern coord marks[N_KEYS];
 
 extern pthread_mutex_t fthreadsmutex;
 
 extern cell field[CHEIGHT][CWIDTH];
+int keys[N_KEYS];
+int modkeys;
 
 extern fthread* fthreads;
 extern unsigned int fthreadslen;
@@ -150,6 +154,8 @@ void focusthread(fthread* cfthread);
 void focuscam(int x, int y);
 
 void docmd(char* cmd);
+
+void keydown(unsigned int key, int x, int y);
 
 void kb1(unsigned char key, int x, int y);
 
