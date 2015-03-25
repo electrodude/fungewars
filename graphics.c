@@ -368,11 +368,11 @@ void display(void)
 	int y;
 	
 	glEnable(GL_TEXTURE_2D);
-	for (y=max(ccy/charheight,0); y<min((sheight+ccy)/charheight+1,CHEIGHT); y++)
+	for (y=max(ccy/charheight,0); y<min((sheight+ccy)/charheight+1,curr_field->height); y++)
 	{
-		for (x=max(ccx/charwidth,0); x<min((swidth+ccx)/charwidth+1,CWIDTH); x++)
+		for (x=max(ccx/charwidth,0); x<min((swidth+ccx)/charwidth+1,curr_field->width); x++)
 		{
-			glputcell(x*charwidth - ccx, y*charheight - ccy, &field[y][x]);
+			glputcell(x*charwidth - ccx, y*charheight - ccy, field_get(curr_field, x, y));
 		}
 	}
 	glDisable(GL_TEXTURE_2D);
@@ -457,9 +457,9 @@ void display(void)
 	glColor4f(0.0, 1.0, 1.0, 1.0);
 	glBegin(GL_LINE_LOOP);
 	glVertex2f(-ccx, -ccy);
-	glVertex2f(-ccx, CHEIGHT*charheight + 1 - ccy);
-	glVertex2f(CWIDTH*charwidth + 1 - ccx, CHEIGHT*charheight + 1 - ccy);
-	glVertex2f(CWIDTH*charwidth + 1 - ccx, -ccy);
+	glVertex2f(-ccx, curr_field->height*charheight + 1 - ccy);
+	glVertex2f(curr_field->width*charwidth + 1 - ccx, curr_field->height*charheight + 1 - ccy);
+	glVertex2f(curr_field->width*charwidth + 1 - ccx, -ccy);
 	glEnd();
 
 	glPopMatrix();
@@ -477,8 +477,8 @@ void display(void)
 	
 	//cx+=3;
 	//cy+=5;
-	//cx-=cx>CWIDTH*12;
-	//cy-=cy>CHEIGHT*16;
+	//cx-=cx>curr_field->width*12;
+	//cy-=cy>curr_field->height*16;
 	/*
 	glBegin(GL_LINES);
 	glVertex3f(y, x, 0);

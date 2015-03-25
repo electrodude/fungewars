@@ -17,7 +17,7 @@ int delay = 500000;
 
 int lastfid=0;
 
-fthread* newfthread(unsigned int team, int x, int y, int dx, int dy, int flag)
+fthread* newfthread(field* f, unsigned int team, int x, int y, int dx, int dy, int flag)
 {
 	unsigned int i;
 	for (i=0; i<fthreadslen && fthreads[i].alive != DEAD; i++);
@@ -56,6 +56,7 @@ fthread* newfthread(unsigned int team, int x, int y, int dx, int dy, int flag)
 	cfthread->repeats = 0;
 	cfthread->alive = ALIVE;
 	cfthread->mode = RUN;
+	cfthread->field = f;
 	
 	if (!(flag & NFT_NO_STACK))
 	{	
@@ -68,9 +69,7 @@ fthread* newfthread(unsigned int team, int x, int y, int dx, int dy, int flag)
 		cfthread->alive = GHOST;
 	}
 	
-	field[y][x].bg = &colors[cfthread->team*2+1];
-	
-	//cthread = id;
+	field_get(f, x, y)->bg = &colors[cfthread->team*2+1];
 	
 #if debugout >= 3
 	printf("new thread, i=%d, id=%d, team=%d, x=%d, y=%d, dx=%d, dy=%d\n", i, cfthread->id, team, x, y, dx, dy);
@@ -96,7 +95,7 @@ fthread* dupfthread(fthread** parent)
 	cfthread->stack = malloc(cfthread->stacksize*sizeof(int));
 	//*/
 	fthread* oldptr = fthreads;
-	fthread* cfthread = newfthread((*parent)->team, (*parent)->x, (*parent)->y, (*parent)->dx, (*parent)->dy, NFT_NO_STACK);
+	fthread* cfthread = newfthread((*parent)->field, (*parent)->team, (*parent)->x, (*parent)->y, (*parent)->dx, (*parent)->dy, NFT_NO_STACK);
 	size_t offset = fthreads - oldptr;
 	
 	*parent += offset;
@@ -166,7 +165,7 @@ int pop(fthread* cfthread)
 	return cfthread->stack[--cfthread->stackidx];
 }
 
-coord* chkline(int x0, int y0, int x1, int y1, char check)	//modified off of Wikipedia's example for Bresenham's line algorithm
+coord* chkline(field* f, int x0, int y0, int x1, int y1, char check)	//modified off of Wikipedia's example for Bresenham's line algorithm
 {
 	int dx = abs(x1-x0);
 	int sx = x0<x1 ? 1 : -1;
@@ -181,7 +180,7 @@ coord* chkline(int x0, int y0, int x1, int y1, char check)	//modified off of Wik
 		// blockers are overwritable if you can find them
 		if (x0==x1 && y0==y1) break;
 
-		if (field[y0][x0].instr == check)
+		if (field_get(f, x0, y0)->instr == check)
 		{
 			culprit.x = x0;
 			culprit.y = y0;
@@ -194,7 +193,7 @@ coord* chkline(int x0, int y0, int x1, int y1, char check)	//modified off of Wik
 	return NULL;
 }
 
-int loadwarrior(int x, int y, int team, const char* path)
+int loadwarrior(field* f, int x, int y, int team, const char* path)
 {
 	static int lastteam = 0;
 
@@ -222,25 +221,28 @@ int loadwarrior(int x, int y, int team, const char* path)
 			case '\n':
 			{
 				y2--;
-				if (y2<0) y2+=CHEIGHT;
+				if (y2<0) y2+=f->height;
 				x2=x;
 				break;
 			}
 			default:
 			{
-				field[y2][x2].instr = c;
-				field[y2][x2++].bg = &colors[team*2];
-				x2 %= CWIDTH;
+				field_get(f, x2, y2)->instr = c;
+				field_get(f, x2, y2)->bg = &colors[team*2];
+				x2++;
+				x2 %= f->width;
 				break;
 			}
 		}
 	}
-	newfthread(team, x, y, 1, 0, 0);
+	newfthread(f, team, x, y, 1, 0, 0);
 	fclose(fp);
 }
 
 int execinstr(fthread* cfthread, cell* ccell)
 {
+	field* f = cfthread->field;
+
 	//printf("id=%d, instr=%c, x=%d, y=%d, tos=%d\n", cfthread->i, ccell.instr, cfthread->x, cfthread->y, cfthread->stack[cfthread->stackidx-1]);
 	if (cfthread->mode == STEP) cfthread->mode = PAUSED;
 #if debugout >= 3					
@@ -299,7 +301,7 @@ int execinstr(fthread* cfthread, cell* ccell)
 			case '\'':
 			{
 				cfthread->delta++;
-				ccell2 = &field[wrap(cfthread->y + cfthread->dy,CHEIGHT)][wrap(cfthread->x + cfthread->dx, CWIDTH)];
+				ccell2 = field_get(f, wrap(cfthread->x + cfthread->dx, CWIDTH), wrap(cfthread->y + cfthread->dy,CHEIGHT));
 				push(cfthread, ccell2->instr);
 				ccell2->bg = &colors[cfthread->team*2];
 				break;
@@ -541,7 +543,7 @@ int execinstr(fthread* cfthread, cell* ccell)
 				t2 = pop(cfthread);
 				destx = wrap(t2*cfthread->dx - t1*cfthread->dy + cfthread->x, CWIDTH);
 				desty = wrap(t1*cfthread->dx + t2*cfthread->dy + cfthread->y, CHEIGHT);
-				ccell2 = &field[desty][destx];
+				ccell2 = field_get(f, destx, desty);
 				push(cfthread, ccell2->instr);
 				ccell2->bg = &colors[cfthread->team*2];
 				break;
@@ -558,7 +560,7 @@ int execinstr(fthread* cfthread, cell* ccell)
 				cfthread->delta--;	//decrement delta because we're doing one here
 				cfthread->x = wrap(cfthread->x + cfthread->dx, CWIDTH);
 				cfthread->y = wrap(cfthread->y + cfthread->dy, CHEIGHT);
-				//delta += execinstr(cfthread, ccell)-1;
+				//delta += execinstr(f, cfthread, ccell)-1;
 				break;
 			}
 			case 'n':
@@ -573,9 +575,9 @@ int execinstr(fthread* cfthread, cell* ccell)
 				if (cfthread->i == ghostid) break;
 				destx = wrap(t2*cfthread->dx - t1*cfthread->dy + cfthread->x, CWIDTH);
 				desty = wrap(t1*cfthread->dx + t2*cfthread->dy + cfthread->y, CHEIGHT);
-				if (!(culprit = chkline(cfthread->x, cfthread->y, destx, desty, 'X')))
+				if (!(culprit = chkline(f, cfthread->x, cfthread->y, destx, desty, 'X')))
 				{
-					ccell2 = &field[desty][destx];
+					ccell2 = field_get(f, destx, desty);
 					ccell2->instr = pop(cfthread);
 					ccell2->bg = &colors[cfthread->team*2];
 				}
@@ -591,7 +593,7 @@ int execinstr(fthread* cfthread, cell* ccell)
 					break;
 				}
 				cfthread->delta++;
-				ccell2 = &field[wrap(cfthread->y + cfthread->dy,CHEIGHT)][wrap(cfthread->x + cfthread->dx, CWIDTH)];
+				ccell2 = field_get(f, wrap(cfthread->x + cfthread->dx, CWIDTH), wrap(cfthread->y + cfthread->dy,CHEIGHT));
 				ccell2->instr = pop(cfthread);
 				ccell2->bg = &colors[cfthread->team*2];
 				break;
@@ -655,7 +657,7 @@ int execinstr(fthread* cfthread, cell* ccell)
 		cfthread->x = wrap(cfthread->x + cfthread->dx*cfthread->delta, CWIDTH);
 		cfthread->y = wrap(cfthread->y + cfthread->dy*cfthread->delta, CHEIGHT);
 	}
-	field[cfthread->y][cfthread->x].bg = &colors[cfthread->team*2+1];
+	field_get(f, cfthread->x, cfthread->y)->bg = &colors[cfthread->team*2+1];
 	if (!cfthread->repeats) cfthread->delta=1;
 	//printf("id=%d, instr=%c, x=%d, y=%d, tos=%d\n", cfthread->i, ccell.instr, cfthread->x, cfthread->y, cfthread->stack[cfthread->stackidx-1]);
 }
@@ -663,20 +665,7 @@ int execinstr(fthread* cfthread, cell* ccell)
 void* interpreter(void* threadid)
 {
 	int id = (int)threadid;
-	
-	int x;
-	int y;
-	
-	for (y=0; y<CHEIGHT; y++)
-	{
-		for (x=0; x<CWIDTH; x++)
-		{
-			field[y][x].instr = 0;
-			field[y][x].fg = &color_fg;
-			field[y][x].bg = NULL;
-		}
-	}
-	
+
 #if 0	
 	unsigned int i;
 	int x2;
@@ -702,8 +691,8 @@ void* interpreter(void* threadid)
 			fthread* cfthread = &fthreads[i];
 			if (cfthread->alive != DEAD && (((run2 != PAUSED) && cfthread->mode == RUN) || cfthread->mode == STEP))
 			{
-				cell* ccell = &field[cfthread->y][cfthread->x];
-				field[cfthread->y][cfthread->x].bg = &colors[cfthread->team*2];
+				cell* ccell = field_get(cfthread->field, cfthread->x, cfthread->y);
+				ccell->bg = &colors[cfthread->team*2];
 				execinstr(cfthread, ccell);
 			}
 		}

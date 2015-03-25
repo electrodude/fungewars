@@ -22,7 +22,7 @@ extern int delay;
 
 extern int lastfid;
 
-fthread* newfthread(unsigned int team, int x, int y, int dx, int dy, int flag);
+fthread* newfthread(field* f, unsigned int team, int x, int y, int dx, int dy, int flag);
 
 fthread* dupfthread(fthread** parent);
 
@@ -34,9 +34,9 @@ int push(fthread* cfthread, int x);
 
 int pop(fthread* cfthread);
 
-coord* chkline(int x0, int y0, int x1, int y1, char check);
+coord* chkline(field* f, int x0, int y0, int x1, int y1, char check);
 
-int loadwarrior(int x, int y, int team, const char* path);
+int loadwarrior(field* f, int x, int y, int team, const char* path);
 
 int execinstr(fthread* cfthread, cell* ccell);
 

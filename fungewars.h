@@ -26,6 +26,13 @@ typedef struct
 	color* bg;
 } cell;
 
+typedef struct
+{
+	cell (*cells)[1][1];
+	int width;
+	int height;
+} field;
+
 typedef enum
 {
 	DEAD,
@@ -59,6 +66,7 @@ typedef struct
 	int repeats;
 	falive alive;
 	fmode mode;
+	field* field;
 } fthread;
 
 typedef struct
@@ -71,7 +79,8 @@ extern coord marks[N_KEYS];
 
 extern pthread_mutex_t fthreadsmutex;
 
-extern cell field[CHEIGHT][CWIDTH];
+extern field* curr_field;
+
 int keys[N_KEYS];
 int modkeys;
 
@@ -134,7 +143,11 @@ search_cell* search_cell_new(search_cell* parent, int x, int y, int dx, int dy, 
 
 void search_cell_kill(search_cell* this);
 
+field* field_new(int width, int height);
 
+void field_kill(field* f);
+
+cell* field_get(field* f, int x, int y);
 
 
 int wrap(int x, int m);

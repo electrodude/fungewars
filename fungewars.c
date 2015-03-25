@@ -33,7 +33,7 @@ int modkeys;
 fthread* fthreads;
 unsigned int fthreadslen = 0;
 
-cell field[CHEIGHT][CWIDTH];
+field* curr_field;
 
 int cthread = -1;
 
@@ -69,6 +69,13 @@ int wrap(int x, int m)
 
 void newgame(void)
 {
+	if (curr_field != NULL)
+	{
+		field_kill(curr_field);
+	}
+
+	curr_field = field_new(256, 256);
+
 	unsigned int i;
 	for (i=0; i<fthreadslen; i++)
 	{
@@ -82,7 +89,7 @@ void newgame(void)
 		fthreads[i].alive = DEAD;
 	}
 	
-	ghostid = newfthread(8, 0, 0, 0, 0, NFT_GHOST)->i;
+	ghostid = newfthread(curr_field, 8, 0, 0, 0, 0, NFT_GHOST)->i;
 }
 
 color color_clear = {0.0, 0.0, 0.0, 0.0};
@@ -271,11 +278,11 @@ int search_match(const char** pattern, char target)
 
 void search2(search_cell* parent, int x, int y, int dx, int dy, const char* pattern)
 {
-	x = wrap(x, CWIDTH);
-	y = wrap(y, CHEIGHT);
+	x = wrap(x, curr_field->width);
+	y = wrap(y, curr_field->height);
 
 	char pc = *pattern;
-	char fc = field[y][x].instr;
+	char fc = field_get(curr_field, x, y)->instr;
 
 	//printf("search2(%d, %d, %d, %d, '%c'): '%c'\n", x, y, dx, dy, pc, fc);
 
@@ -419,9 +426,9 @@ void search2(search_cell* parent, int x, int y, int dx, int dy, const char* patt
 
 void search(const char* pattern)
 {
-	for (int y=0; y<CHEIGHT; y++)
+	for (int y=0; y<curr_field->height; y++)
 	{
-		for (int x=0; x<CWIDTH; x++)
+		for (int x=0; x<curr_field->width; x++)
 		{
 			search_status[y][x] = 0;
 		}
@@ -446,28 +453,28 @@ void search(const char* pattern)
 	int x=xi;
 	int y=yi;
 
-	int endx = wrap(xi, CWIDTH) - 1;
-	int endy = wrap(yi, CHEIGHT);
+	int endx = wrap(xi, curr_field->width) - 1;
+	int endy = wrap(yi, curr_field->height);
 
 	if (endx < 0)
 	{
-		endx += CWIDTH;
+		endx += curr_field->width;
 		endy--;
 		if (endy<0)
 		{
-			endy += CHEIGHT;
+			endy += curr_field->height;
 		}
 	}
 
 	printf("presearch: (%d, %d), (%d, %d)\n", x, y, endx, endy);
 
-	for (;; y = wrap(y+1, CHEIGHT))
+	for (;; y = wrap(y+1, curr_field->height))
 	{
 		//printf("search row: %d\n", y);
-		for (; x<CWIDTH; x++)
+		for (; x<curr_field->width; x++)
 		{
 			//printf("search: %d, %d\n", x, y);
-			if (field[y][x].instr == *pattern)
+			if (field_get(curr_field, x, y)->instr == *pattern)
 			{
 				for (int d=0; d<=3; d++)
 				{
@@ -543,6 +550,47 @@ search_done:
 
 }
 
+
+field* field_new(int width, int height)
+{
+	field* this = (field*)malloc(sizeof(field));
+
+	this->width = width;
+	this->height = height;
+
+	cell (*cells)[height][width] = malloc(sizeof(cell[height][width]));
+
+	this->cells = cells;
+
+	int x;
+	int y;
+
+	for (y=0; y<height; y++)
+	{
+		for (x=0; x<width; x++)
+		{
+			//printf("field_new: %d, %d\n", y, x);
+			(*cells)[y][x].instr = 0;
+			(*cells)[y][x].fg = &color_fg;
+			(*cells)[y][x].bg = NULL;
+		}
+	}
+
+	return this;
+}
+
+void field_kill(field* f)
+{
+	free(f->cells);
+	free(f);
+}
+
+cell* field_get(field* f, int x, int y)
+{
+	return &((cell(*)[f->width])(f->cells))[wrap(y, f->height)][wrap(x, f->width)];
+}
+
+
 // process command
 void docmd(char* cmd)
 {
@@ -582,7 +630,7 @@ void docmd(char* cmd)
 				{
 					team = atoi(team_s);
 				}
-				int status = loadwarrior(xi, yi, team, path);
+				int status = loadwarrior(curr_field, xi, yi, team, path);
 				switch (status)
 				{
 					case 0:
@@ -700,7 +748,7 @@ void keydown(unsigned int key, int x, int y)
 			if (key < 256)
 			{
 				keyused = 1;
-				field[yi][xi].instr = key;
+				field_get(curr_field, xi, yi)->instr = key;
 				uimode = NORMAL;
 				clrstatus();
 			}
@@ -731,7 +779,7 @@ void keydown(unsigned int key, int x, int y)
 					if (key < 256)
 					{
 						keyused = 1;
-						field[yi][xi].instr = key;
+						field_get(curr_field, xi, yi)->instr = key;
 						break;
 					}
 				}
@@ -846,7 +894,7 @@ void keydown(unsigned int key, int x, int y)
 		{
 			int x = marks[key].x;
 			int y = marks[key].y;
-			if (x>=0 && y>=0 && x<CWIDTH && y<CHEIGHT)
+			if (x>=0 && y>=0 && x<curr_field->width && y<curr_field->height)
 			{
 				focuscam(x, y);
 			}
@@ -1021,7 +1069,7 @@ void keydown(unsigned int key, int x, int y)
 		case 8:
 		case 127:
 		{
-			field[yi][xi].instr=0;
+			field_get(curr_field, xi, yi)->instr=0;
 			if (cthread == ghostid && ghostid != -1)
 			{
 				fthreads[ghostid].delta *= -1;
