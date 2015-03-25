@@ -104,6 +104,8 @@ void setstatus_color(int i, char c, color* fg, color* bg)
 	statusline[i].instr = c;
 	statusline[i].fg = fg;
 	statusline[i].bg = bg;
+
+	status_dirty = 1;
 }
 
 void setstatus_c(int i, char c)
@@ -158,6 +160,7 @@ void focuscam(int x, int y)
 	ccdy = 0;
 }
 
+// search
 
 search_result* search_first_result;
 
@@ -777,6 +780,7 @@ void keydown(unsigned int key, int x, int y)
 				{
 					break;
 				}
+				/*
 				case '\r':
 				case '\n':
 				{
@@ -786,6 +790,7 @@ void keydown(unsigned int key, int x, int y)
 					}
 					break;
 				}
+				*/
 				default:
 				{
 					if (key < 256)
@@ -1010,7 +1015,7 @@ void keydown(unsigned int key, int x, int y)
 
 	switch (key)
 	{
-		case 9:
+		case 9: // tab
 		{
 			t1 = cthread>=0 ? cthread : fthreadslen-1;
 			do
@@ -1036,7 +1041,7 @@ void keydown(unsigned int key, int x, int y)
 			
 			break;
 		}
-		case 25:
+		case 25: // un-tab?
 		{
 			t1 = cthread>=0 ? cthread : 0;
 			do
@@ -1063,21 +1068,6 @@ void keydown(unsigned int key, int x, int y)
 			break;
 		}
 		/*
-		case '+':
-		case '=':
-		{
-			if (delay>1) delay/=1.5;
-			printf("delay: %d\n", delay);
-			break;
-		}
-		case '-':
-		case '_':
-		{
-			delay*=1.5;
-			printf("delay: %d\n", delay);
-			break;
-		}
-		//*/
 		case 8:
 		case 127:
 		{
@@ -1089,6 +1079,7 @@ void keydown(unsigned int key, int x, int y)
 			}
 			break;
 		}
+		*/
 
 		case 1+256:
 		{
@@ -1121,23 +1112,23 @@ void keydown(unsigned int key, int x, int y)
 	//pthread_mutex_lock(&fthreadsmutex);
 	if (cthread >= 0)
 	{
-		fthread cfthread = fthreads[cthread];
-		if (cfthread.alive != DEAD)
+		fthread* cfthread = &fthreads[cthread];
+		if (cfthread->alive != DEAD)
 		{
 			switch (key)
 			{
 				case 5+256:
 				{
-					cfthread.mode = STEP;
+					cfthread->mode = STEP;
 					break;
 				}
 				case 6+256:
 				{
 					printf("stack trace for thread %d:\n", cthread);
 					int i;
-					for (i=0; i<cfthread.stackidx; i++)
+					for (i=0; i<cfthread->stackidx; i++)
 					{
-						printf("%d: %d\n", i, cfthread.stack[i]);
+						printf("%d: %d\n", i, cfthread->stack[i]);
 					}
 					break;
 				}
@@ -1148,7 +1139,7 @@ void keydown(unsigned int key, int x, int y)
 				}
 				case 9+256:
 				{
-					cfthread.mode = (cfthread.mode==RUN) ? PAUSED : RUN; 
+					cfthread->mode = (cfthread->mode==RUN) ? PAUSED : RUN;
 					break;
 				}
 				default:
@@ -1284,21 +1275,6 @@ void idle(void)
 	xi = (cx+swidth/2)/charwidth;
 	yi = (cy+sheight/2)/charheight;
 
-	
-	/*
-	int i;
-	int k=0;
-	for (i=0; i<512; i++)
-	{
-		if (keys[i])
-		{
-			printf("%d",i);
-			k++;
-		}
-	}
-	if (k)
-		printf("\n");
-	//*/
 	glutPostRedisplay();
 }
 
@@ -1326,8 +1302,6 @@ int main(int argc, char** argv)
 		marks[i].x = -1;
 		marks[i].y = -1;
 	}
-	
-	//glutMainLoop();
 	
 	pthread_mutex_init(&fthreadsmutex, NULL);
 	

@@ -80,20 +80,6 @@ fthread* newfthread(field* f, unsigned int team, int x, int y, int dx, int dy, i
 
 fthread* dupfthread(fthread** parent)
 {
-	/*
-	int id=0;
-	for (id=0; id<fthreadslen && fthreads[id]; id++);
-	fthread* cfthread = fthreads[id] = malloc(sizeof(fthread));
-	cfthread->id = id;
-	cfthread->parent = parent->id;
-	cfthread->team = parent->team;
-	cfthread->x = parent->x;
-	cfthread->y = parent->y;
-	cfthread->dx = parent->dx;
-	cfthread->dy = parent->dy;
-	cfthread->stacksize = parent->stacksize;
-	cfthread->stack = malloc(cfthread->stacksize*sizeof(int));
-	//*/
 	fthread* oldptr = fthreads;
 	fthread* cfthread = newfthread((*parent)->field, (*parent)->team, (*parent)->x, (*parent)->y, (*parent)->dx, (*parent)->dy, NFT_NO_STACK);
 	size_t offset = fthreads - oldptr;
@@ -149,7 +135,7 @@ int getfthread(int x, int y)
 
 int push(fthread* cfthread, int x)
 {
-	if (cfthread->stackidx > cfthread->stacksize)
+	if (cfthread->stackidx >= cfthread->stacksize)
 	{
 		printf("stack overflow!\n");
 		killfthread(cfthread->i);
@@ -195,13 +181,6 @@ coord* chkline(field* f, int x0, int y0, int x1, int y1, char check)	//modified 
 
 int loadwarrior(field* f, int x, int y, int team, const char* path)
 {
-	static int lastteam = 0;
-
-	if (team == -1)
-	{
-		team = lastteam++;
-	}
-
 	FILE* fp = fopen(path, "r");
 	
 	if (fp == NULL)
@@ -209,8 +188,17 @@ int loadwarrior(field* f, int x, int y, int team, const char* path)
 		return 1;
 	}
 
+	static int lastteam = 0;
+
+	if (team == -1)
+	{
+		team = lastteam++;
+	}
+
 	int x2 = x;
 	int y2 = y;
+
+	int nonblank=0;
 
 	char c;
 
@@ -223,12 +211,17 @@ int loadwarrior(field* f, int x, int y, int team, const char* path)
 				y2--;
 				if (y2<0) y2+=f->height;
 				x2=x;
+				nonblank=0;
 				break;
 			}
 			default:
 			{
-				field_get(f, x2, y2)->instr = c;
-				field_get(f, x2, y2)->bg = &colors[team*2];
+				if (nonblank || c != ' ')
+				{
+					field_get(f, x2, y2)->instr = c;
+					field_get(f, x2, y2)->bg = &colors[team*2];
+					nonblank=1;
+				}
 				x2++;
 				x2 %= f->width;
 				break;
@@ -434,7 +427,7 @@ int execinstr(fthread* cfthread, cell* ccell)
 				cfthread->dy = pop(cfthread)>0 ? -1 : 1;
 				break;
 			}
-			case 'N':
+			case 'N':		// wierd trapdoor
 			{
 				ccell->instr = '@';
 				cfthread->x += cfthread->dx;
@@ -583,8 +576,8 @@ int execinstr(fthread* cfthread, cell* ccell)
 				}
 				break;
 			}
-				//q is with @
-				//r is below t
+			//q is with @
+			//r is below t
 			case 's':
 			{
 				if (cfthread->i == ghostid)
@@ -671,7 +664,7 @@ void* interpreter(void* threadid)
 	int x2;
 	int y2;
 	char cchar;
-	
+
 	for (i=0; i<8; i++)
 	{
 		char* fname;
@@ -681,7 +674,7 @@ void* interpreter(void* threadid)
 		free(fname);
 	}
 #endif	
-	
+
 	while (1)
 	{
 		fmode run2 = run;

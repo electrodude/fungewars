@@ -332,25 +332,6 @@ void display(void)
 	}
 
 
-	/*
-	if (ccx != cx || ccy != cy)
-	{
-		float r = sqrt((ccx-cx)*(ccx-cx)+(ccy-cy)*(ccy-cy));
-		float cdx = (cx-ccx)/r;
-		float cdy = (cy-ccy)/r;
-		ccx+=cdx;
-		ccy+=cdy;
-	}
-	//*/
-	
-	//printf("cam: (%f, %f)\n", ccx, ccy);
-	/*
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	//*/
 	glOrtho(0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
 	
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -472,18 +453,7 @@ void display(void)
 		glputcell(x*charwidth, 1.5, &statusline[x]);
 	}
 	glDisable(GL_TEXTURE_2D);
-
 	
-	
-	//cx+=3;
-	//cy+=5;
-	//cx-=cx>curr_field->width*12;
-	//cy-=cy>curr_field->height*16;
-	/*
-	glBegin(GL_LINES);
-	glVertex3f(y, x, 0);
-	glEnd();
-	*/
 	
 	frame++;
 	timelast=glutGet(GLUT_ELAPSED_TIME);
@@ -499,12 +469,6 @@ void display(void)
 	glutSwapBuffers();
 }
 
-/*
-void reshape(int width, int height)
-{
-	glViewport(0, 0, width, height);
-}
-*/
 void reshape(int w, int h)
 {
 	rswidth = w;
@@ -524,11 +488,13 @@ void reshape(int w, int h)
 	glLoadIdentity();
 	glOrtho(0, w, 0, h, -100000.0, 100000.0);
 	//size = (GLdouble)((w >= h) ? w : h) / 2.0;
-	if (w <= h) {
+	if (w <= h)
+	{
 		aspect = (GLdouble)h/(GLdouble)w;
 		//glOrtho(0, size*2, 0, size*aspect*2, -100000.0, 100000.0);
 	}
-	else {
+	else
+	{
 		aspect = (GLdouble)w/(GLdouble)h;
 		//glOrtho(0, size*aspect*2, 0, size*2, -100000.0, 100000.0);
 	}
