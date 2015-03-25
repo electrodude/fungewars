@@ -631,6 +631,18 @@ void docmd(char* cmd)
 					team = atoi(team_s);
 				}
 				int status = loadwarrior(curr_field, xi, yi, team, path);
+				if (status)
+				{
+					char path2[strlen(path)+strlen("warriors/?.b98")];
+					sprintf(path2, "warriors/%s.b98", path);
+					status = loadwarrior(curr_field, xi, yi, team, path2);
+				}
+				if (status)
+				{
+					char path2[strlen(path)+strlen("?.b98")];
+					sprintf(path2, "%s.b98", path);
+					status = loadwarrior(curr_field, xi, yi, team, path2);
+				}
 				switch (status)
 				{
 					case 0:
