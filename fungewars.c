@@ -88,7 +88,7 @@ void newgame(void)
 	{
 		fthreads[i].alive = DEAD;
 	}
-	
+
 	ghostid = newfthread(curr_field, 8, 0, 0, 0, 0, NFT_GHOST)->i;
 }
 
@@ -899,6 +899,8 @@ void keydown(unsigned int key, int x, int y)
 
 		case MARK_SET:
 		{
+			keyused = 1;
+
 			marks[key].x = xi;
 			marks[key].y = yi;
 
@@ -909,6 +911,8 @@ void keydown(unsigned int key, int x, int y)
 
 		case MARK_GET:
 		{
+			keyused = 1;
+
 			int x = marks[key].x;
 			int y = marks[key].y;
 			if (x>=0 && y>=0 && x<curr_field->width && y<curr_field->height)
@@ -926,13 +930,15 @@ void keydown(unsigned int key, int x, int y)
 		}
 	}
 
-	if (uimode == NORMAL || uimode == VISUAL)
+	if (!keyused && (uimode == NORMAL || uimode == VISUAL))
 	{
 		switch (key)
 		{
 			case '/':
 			case ':':
 			{
+				keyused = 1;
+
 				clrstatus();
 				uimode = EX;
 				setstatus_c(0, key);
@@ -945,12 +951,16 @@ void keydown(unsigned int key, int x, int y)
 			case '+': // faster
 			case '=':
 			{
+				keyused = 1;
+
 				if (delay>1) delay/=2;
 				printf("delay: %d\n", delay);
 				break;
 			}
 			case '-': // slower
 			{
+				keyused = 1;
+
 				if (delay<2000000) delay*=2;;
 				printf("delay: %d\n", delay);
 				break;
@@ -959,17 +969,23 @@ void keydown(unsigned int key, int x, int y)
 
 			case '[': // zoom out
 			{
+				keyused = 1;
+
 				czoom /= 1.25;
 				break;
 			}
 			case ']': // zoom in
 			{
+				keyused = 1;
+
 				czoom *= 1.25;
 				break;
 			}
 
 			case 'n': // next search result
 			{
+				keyused = 1;
+
 				setstatus(excmd);
 				if (search_curr_result != NULL)
 				{
@@ -1006,6 +1022,8 @@ void keydown(unsigned int key, int x, int y)
 
 			case '\'': // go to mark
 			{
+				keyused = 1;
+
 				uiprevmode = uimode;
 				uimode = MARK_GET;
 				break;
@@ -1013,133 +1031,167 @@ void keydown(unsigned int key, int x, int y)
 		}
 	}
 
-	switch (key)
+	if (!keyused)
 	{
-		case 9: // tab
+		switch (key)
 		{
-			t1 = cthread>=0 ? cthread : fthreadslen-1;
-			do
+			case 9: // tab
 			{
-				cthread = (cthread+1)%fthreadslen;
-			}
-			while ((fthreads[cthread].alive == DEAD  && t1 != cthread) || cthread == ghostid);
-			if (t1==cthread)
-			{
-				cthread = -1;
-			}
-			else
-			{
-				focuscam(fthreads[cthread].x, fthreads[cthread].y);
-			}
+				t1 = cthread>=0 ? cthread : fthreadslen-1;
+				do
+				{
+					cthread = (cthread+1)%fthreadslen;
+				}
+				while ((fthreads[cthread].alive == DEAD  && t1 != cthread) || cthread == ghostid);
+				if (t1==cthread)
+				{
+					cthread = -1;
+				}
+				else
+				{
+					focuscam(fthreads[cthread].x, fthreads[cthread].y);
+				}
 
-			printf("follow %d\n", cthread);
-			
-			cdx = 0.0;
-			cdy = 0.0;
-			
-			lastupdate = 1;
-			
-			break;
-		}
-		case 25: // un-tab?
-		{
-			t1 = cthread>=0 ? cthread : 0;
-			do
-			{
-				cthread = (cthread-1+fthreadslen)%fthreadslen;
-			}
-			while ((fthreads[cthread].alive == DEAD  && t1 != cthread) || cthread == ghostid);
-			if (t1==cthread)
-			{
-				cthread = -1;
-			}
-			else
-			{
-				focuscam(fthreads[cthread].x, fthreads[cthread].y);
-			}
-			
-			printf("follow %d\n", cthread);
-			
-			cdx = 0.0;
-			cdy = 0.0;
-			
-			lastupdate = 1;
+				printf("follow %d\n", cthread);
 
-			break;
-		}
-		/*
-		case 8:
-		case 127:
-		{
-			field_get(curr_field, xi, yi)->instr=0;
-			if (cthread == ghostid && ghostid != -1)
-			{
-				fthreads[ghostid].delta *= -1;
-				fthreads[ghostid].mode = STEP;
-			}
-			break;
-		}
-		*/
+				cdx = 0.0;
+				cdy = 0.0;
 
-		case 1+256:
-		{
-			if (delay>1) delay/=2;
-			printf("delay: %d\n", delay);
-			break;
+				lastupdate = 1;
+
+				break;
+			}
+			case 25: // un-tab?
+			{
+				t1 = cthread>=0 ? cthread : 0;
+				do
+				{
+					cthread = (cthread-1+fthreadslen)%fthreadslen;
+				}
+				while ((fthreads[cthread].alive == DEAD  && t1 != cthread) || cthread == ghostid);
+				if (t1==cthread)
+				{
+					cthread = -1;
+				}
+				else
+				{
+					focuscam(fthreads[cthread].x, fthreads[cthread].y);
+				}
+
+				printf("follow %d\n", cthread);
+
+				cdx = 0.0;
+				cdy = 0.0;
+
+				lastupdate = 1;
+
+				break;
+			}
+			/*
+			case 8:
+			case 127:
+			{
+				field_get(curr_field, xi, yi)->instr=0;
+				if (cthread == ghostid && ghostid != -1)
+				{
+					fthreads[ghostid].delta *= -1;
+					fthreads[ghostid].mode = STEP;
+				}
+				break;
+			}
+			*/
+
+			case 1+256:
+			{
+				if (delay>1) delay/=2;
+				printf("delay: %d\n", delay);
+				break;
+			}
+			case 2+256:
+			{
+				if (delay<2000000) delay*=2;;
+				printf("delay: %d\n", delay);
+				break;
+			}
+			case 3+256:
+			{
+				czoom /= 1.25;
+				break;
+			}
+			case 4+256:
+			{
+				czoom *= 1.25;
+				break;
+			}
+			case 8+256:
+			{
+				run = (run==RUN) ? PAUSED : RUN;
+				break;
+			}
 		}
-		case 2+256:
+		//pthread_mutex_lock(&fthreadsmutex);
+		if (cthread >= 0)
 		{
-			if (delay<2000000) delay*=2;;
-			printf("delay: %d\n", delay);
-			break;
+			fthread* cfthread = &fthreads[cthread];
+			if (cfthread->alive != DEAD)
+			{
+				switch (key)
+				{
+					case 5+256:
+					{
+						cfthread->mode = STEP;
+						break;
+					}
+					case 6+256:
+					{
+						printf("stack trace for thread %d:\n", cthread);
+						int i;
+						for (i=0; i<cfthread->stackidx; i++)
+						{
+							printf("%d: %d\n", i, cfthread->stack[i]);
+						}
+						break;
+					}
+					case 7+256:
+					{
+						cthread = -1;
+						break;
+					}
+					case 9+256:
+					{
+						cfthread->mode = (cfthread->mode==RUN) ? PAUSED : RUN;
+						break;
+					}
+					default:
+					{
+						break;
+					}
+				}
+			}
 		}
-		case 3+256:
-		{
-			czoom /= 1.25;
-			break;
-		}
-		case 4+256:
-		{
-			czoom *= 1.25;
-			break;
-		}
-		case 8+256:
-		{
-			run = (run==RUN) ? PAUSED : RUN;
-			break;
-		}
-	}
-	//pthread_mutex_lock(&fthreadsmutex);
-	if (cthread >= 0)
-	{
-		fthread* cfthread = &fthreads[cthread];
-		if (cfthread->alive != DEAD)
+		else
 		{
 			switch (key)
 			{
 				case 5+256:
 				{
-					cfthread->mode = STEP;
-					break;
-				}
-				case 6+256:
-				{
-					printf("stack trace for thread %d:\n", cthread);
-					int i;
-					for (i=0; i<cfthread->stackidx; i++)
-					{
-						printf("%d: %d\n", i, cfthread->stack[i]);
-					}
+					run = STEP;
 					break;
 				}
 				case 7+256:
 				{
-					cthread = -1;
+					cthread = getfthread(xi, yi);
+
+					if (cthread == -1)
+					{
+						fthreads[ghostid].x = xi;
+						fthreads[ghostid].y = yi;
+						focusthread(&fthreads[ghostid]);
+					}
 					break;
 				}
 				case 9+256:
-				{
-					cfthread->mode = (cfthread->mode==RUN) ? PAUSED : RUN;
+				{	run = (run==RUN) ? PAUSED : RUN;
 					break;
 				}
 				default:
@@ -1148,39 +1200,8 @@ void keydown(unsigned int key, int x, int y)
 				}
 			}
 		}
+		//pthread_mutex_unlock(&fthreadsmutex);
 	}
-	else
-	{
-		switch (key)
-		{
-			case 5+256:
-			{
-				run = STEP;
-				break;
-			}
-			case 7+256:
-			{
-				cthread = getfthread(xi, yi);
-
-				if (cthread == -1)
-				{
-					fthreads[ghostid].x = xi;
-					fthreads[ghostid].y = yi;
-					focusthread(&fthreads[ghostid]);
-				}
-				break;
-			}
-			case 9+256:
-			{	run = (run==RUN) ? PAUSED : RUN; 
-				break;
-			}
-			default:
-			{
-				break;
-			}
-		}
-	}
-	//pthread_mutex_unlock(&fthreadsmutex);
 
 	uilastcmd = key;
 
@@ -1302,13 +1323,13 @@ int main(int argc, char** argv)
 		marks[i].x = -1;
 		marks[i].y = -1;
 	}
-	
+
 	pthread_mutex_init(&fthreadsmutex, NULL);
-	
+
 	pthread_attr_t threadattr;
 	pthread_attr_init(&threadattr);
 	//pthread_attr_setstacksize(&threadattr, 2097152);
-	
+
 	int i;
 	for (i=0; i<NUM_THREADS; i++)
 	{
@@ -1320,7 +1341,7 @@ int main(int argc, char** argv)
 			exit(-1);
 		}
 	}
-	
+
 	glutMainLoop();
 	return EXIT_SUCCESS;
 }
