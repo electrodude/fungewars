@@ -25,29 +25,14 @@ extern int fontheight;
 extern int charwidth;
 extern int charheight;
 
-extern float cx;
-extern float cy;
-extern float czoom;
+extern view* cam_curr;
 
-extern float ccx;
-extern float ccy;
-extern float cczoom;
-
-extern float ccdx;
-extern float ccdy;
-
-extern int lastcx;
-extern int lastcy;
-extern int lastupdate;
-
-extern float cdx;
-extern float cdy;
+extern view** cams;
+extern int ncams;
+extern int maxcams;
 
 extern int rswidth;
 extern int rsheight;
-
-extern float swidth;
-extern float sheight;
 
 extern int frame;
 extern int timenow;
@@ -61,6 +46,16 @@ extern color colors[18];
 
 
 GLuint png_texture_load(const char* file_name, int* width, int* height);
+
+
+view* view_new(field* f, float sx, float sy, float swidth, float sheight, float x, float y, float zoom);
+
+void view_kill(view* this);
+
+void view_resize(view* this, int newx, int newy, int newwidth, int newheight);
+
+void view_render(view* this);
+
 
 void glputc(float x, float y, int c);
 

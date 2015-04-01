@@ -75,6 +75,37 @@ typedef struct
 	int y;
 } coord;
 
+typedef struct view
+{
+	field* field;
+
+	float sx;
+	float sy;
+	float swidth;
+	float sheight;
+
+	float x;
+	float y;
+	float dx;
+	float dy;
+	float zoom;
+
+	int follow;	// index of followed thread
+//private:
+	float x_curr;
+	float y_curr;
+	float dx_curr;
+	float dy_curr;
+	float zoom_curr;
+
+	float zswidth;
+	float zsheight;
+
+	int id;
+
+	enum {DISABLED, INACTIVE, ACTIVE} state;
+} view;
+
 extern coord marks[N_KEYS];
 
 extern pthread_mutex_t fthreadsmutex;
@@ -86,8 +117,6 @@ int modkeys;
 
 extern fthread* fthreads;
 extern unsigned int fthreadslen;
-
-extern int cthread;
 
 typedef enum {NORMAL, EX, SREPLACE, REPLACE, VISUAL, INSERT, MARK_SET, MARK_GET} uimode_t;
 
@@ -162,9 +191,9 @@ void setstatus(const char* s);
 
 void clrstatus(void);
 
-void focusthread(fthread* cfthread);
+void focusthread(view* v, fthread* cfthread);
 
-void focuscam(int x, int y);
+void focuscam(view* v, int x, int y);
 
 void docmd(char* cmd);
 

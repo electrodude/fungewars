@@ -35,8 +35,6 @@ unsigned int fthreadslen = 0;
 
 field* curr_field;
 
-int cthread = -1;
-
 uimode_t uimode;
 uimode_t uiprevmode;
 
@@ -69,6 +67,21 @@ int wrap(int x, int m)
 
 void newgame(void)
 {
+	for (int i=0; i<maxcams; i++)
+	{
+		if (cams[i] != NULL)
+		{
+			view_kill(cams[i]);
+		}
+	}
+
+	if (run == RUN)
+	{
+		run = STEP;
+	}
+
+	while (run == STEP);
+
 	if (curr_field != NULL)
 	{
 		field_kill(curr_field);
@@ -76,12 +89,18 @@ void newgame(void)
 
 	curr_field = field_new(256, 256);
 
+	cam_curr = view_new(curr_field, 0.0, 0.0, rswidth, rsheight, 0.0, 0.0, 1.0);
+
+	view* cam2 = view_new(curr_field, 0.0, rsheight/2, rswidth, rsheight/2, 0.0, 0.0, 1.0);
+	cam2->state = DISABLED;
+
 	unsigned int i;
 	for (i=0; i<fthreadslen; i++)
 	{
 		if (fthreads[i].alive != DEAD) killfthread(i);
 	}
 	free(fthreads);
+
 	fthreads = malloc(INITIAL_FTHREADS*sizeof(fthread));
 	fthreadslen = INITIAL_FTHREADS;
 	for (i=0; i<INITIAL_FTHREADS; i++)
@@ -90,6 +109,8 @@ void newgame(void)
 	}
 
 	ghostid = newfthread(curr_field, 8, 0, 0, 0, 0, NFT_GHOST)->i;
+
+	clrstatus();
 }
 
 color color_clear = {0.0, 0.0, 0.0, 0.0};
@@ -140,24 +161,19 @@ void clrstatus(void)
 	status_dirty = 0;
 }
 
-void focusthread(fthread* cfthread)
+void focusthread(view* v, fthread* cfthread)
 {
-	cthread = cfthread->i;
-	cx = cfthread->x - swidth/2;
-	cy = cfthread->y - sheight/2;
-	ccdx = 0;
-	ccdy = 0;
-	//delay = 100000;
+	cam_curr->follow = cfthread->i;
+	//cam_curr->x = cfthread->x - v->zswidth/2;
+	//cam_curr->y = cfthread->y - v->zsheight/2;
 }
 
-void focuscam(int x, int y)
+void focuscam(view* v, int x, int y)
 {
 	xi = x;
 	yi = y;
-	cx = x*charwidth - swidth/2;
-	cy = y*charheight - sheight/2;
-	ccdx = 0;
-	ccdy = 0;
+	cam_curr->x = x*charwidth - v->zswidth/2;
+	cam_curr->y = y*charheight - v->zsheight/2;
 }
 
 // search
@@ -547,7 +563,7 @@ search_done:
 	else
 	{
 
-		focuscam(search_curr_result->this->x, search_curr_result->this->y);
+		focuscam(cam_curr, search_curr_result->this->x, search_curr_result->this->y);
 		search_curr_result->refs++;
 	}
 
@@ -609,13 +625,11 @@ void docmd(char* cmd)
 			{
 				return;
 			}
-
-			if (!strcmp(cmdname, "q"))
+			else if (!strcmp(cmdname, "q"))
 			{
 				glutLeaveMainLoop();
 			}
-
-			if (!strcmp(cmdname, "load"))
+			else if (!strcmp(cmdname, "load"))
 			{
 				char* path = strtok(NULL, " ");
 				char* team_s = strtok(NULL, " ");
@@ -659,11 +673,16 @@ void docmd(char* cmd)
 					}
 				}
 			}
-
-			if (!strcmp(cmdname, "noh"))
+			else if (!strcmp(cmdname, "noh"))
 			{
 				search_curr_result = NULL;
 			}
+			else if (!strcmp(cmdname, "reset"))
+			{
+				newgame();
+			}
+
+
 			break;
 		}
 		case '/':
@@ -678,8 +697,6 @@ void docmd(char* cmd)
 
 void keydown(unsigned int key, int x, int y)
 {
-	printf("key down: %d\n", key);
-
 	int keyused = 0;
 
 	int t1;
@@ -747,6 +764,52 @@ void keydown(unsigned int key, int x, int y)
 					break;
 				}
 
+				case 'b':
+				{
+					if (cam_curr == cams[0])
+					{
+						cam_curr = cams[1];
+
+						cams[1]->state = ACTIVE;
+						cams[0]->state = INACTIVE;
+						
+						view_resize(cams[0], 0.0, 0.0, rswidth, rsheight/2);
+						view_resize(cams[1], 0.0, rsheight/2, rswidth, rsheight/2);
+					}
+					else
+					{
+						cam_curr = cams[0];
+
+						cams[0]->state = ACTIVE;
+						cams[1]->state = cams[1]->state == ACTIVE ? INACTIVE : DISABLED;
+					}
+					break;
+				}
+
+				case 'B':
+				{
+					if (cams[1]->state == DISABLED)
+					{
+						cam_curr = cams[1];
+
+						cams[1]->state = ACTIVE;
+						cams[0]->state = INACTIVE;
+						
+						view_resize(cams[0], 0.0, 0.0, rswidth, rsheight/2);
+						view_resize(cams[1], 0.0, rsheight/2, rswidth, rsheight/2);
+					}
+					else
+					{
+						cam_curr = cams[0];
+
+						cams[1]->state = DISABLED;
+						cams[0]->state = ACTIVE;
+						
+						view_resize(cams[0], 0.0, 0.0, rswidth, rsheight);
+					}
+					break;
+				}
+
 				case '\r':
 				case '\n':
 				{
@@ -784,7 +847,7 @@ void keydown(unsigned int key, int x, int y)
 				case '\r':
 				case '\n':
 				{
-					if (cthread == ghostid && ghostid != -1)
+					if (cam_curr->follow == ghostid && ghostid != -1)
 					{
 						fthreads[ghostid].mode = STEP;
 					}
@@ -917,7 +980,7 @@ void keydown(unsigned int key, int x, int y)
 			int y = marks[key].y;
 			if (x>=0 && y>=0 && x<curr_field->width && y<curr_field->height)
 			{
-				focuscam(x, y);
+				focuscam(cam_curr, x, y);
 			}
 			else
 			{
@@ -971,14 +1034,14 @@ void keydown(unsigned int key, int x, int y)
 			{
 				keyused = 1;
 
-				czoom /= 1.25;
+				cam_curr->zoom /= 1.25;
 				break;
 			}
 			case ']': // zoom in
 			{
 				keyused = 1;
 
-				czoom *= 1.25;
+				cam_curr->zoom *= 1.25;
 				break;
 			}
 
@@ -1013,7 +1076,7 @@ void keydown(unsigned int key, int x, int y)
 
 				if (search_curr_result != NULL)
 				{
-					focuscam(search_curr_result->this->x, search_curr_result->this->y);
+					focuscam(cam_curr, search_curr_result->this->x, search_curr_result->this->y);
 					//search_curr_result->refs++;
 				}
 				break;
@@ -1037,53 +1100,43 @@ void keydown(unsigned int key, int x, int y)
 		{
 			case 9: // tab
 			{
-				t1 = cthread>=0 ? cthread : fthreadslen-1;
+				t1 = cam_curr->follow>=0 ? cam_curr->follow : fthreadslen-1;
 				do
 				{
-					cthread = (cthread+1)%fthreadslen;
+					cam_curr->follow = (cam_curr->follow+1)%fthreadslen;
 				}
-				while ((fthreads[cthread].alive == DEAD  && t1 != cthread) || cthread == ghostid);
-				if (t1==cthread)
+				while ((fthreads[cam_curr->follow].alive == DEAD  && t1 != cam_curr->follow) || cam_curr->follow == ghostid);
+				if (t1==cam_curr->follow)
 				{
-					cthread = -1;
+					cam_curr->follow = -1;
 				}
 				else
 				{
-					focuscam(fthreads[cthread].x, fthreads[cthread].y);
+					focuscam(cam_curr, fthreads[cam_curr->follow].x, fthreads[cam_curr->follow].y);
 				}
 
-				printf("follow %d\n", cthread);
-
-				cdx = 0.0;
-				cdy = 0.0;
-
-				lastupdate = 1;
+				printf("follow %d\n", cam_curr->follow);
 
 				break;
 			}
 			case 25: // un-tab?
 			{
-				t1 = cthread>=0 ? cthread : 0;
+				t1 = cam_curr->follow>=0 ? cam_curr->follow : 0;
 				do
 				{
-					cthread = (cthread-1+fthreadslen)%fthreadslen;
+					cam_curr->follow = (cam_curr->follow-1+fthreadslen)%fthreadslen;
 				}
-				while ((fthreads[cthread].alive == DEAD  && t1 != cthread) || cthread == ghostid);
-				if (t1==cthread)
+				while ((fthreads[cam_curr->follow].alive == DEAD  && t1 != cam_curr->follow) || cam_curr->follow == ghostid);
+				if (t1==cam_curr->follow)
 				{
-					cthread = -1;
+					cam_curr->follow = -1;
 				}
 				else
 				{
-					focuscam(fthreads[cthread].x, fthreads[cthread].y);
+					focuscam(cam_curr, fthreads[cam_curr->follow].x, fthreads[cam_curr->follow].y);
 				}
 
-				printf("follow %d\n", cthread);
-
-				cdx = 0.0;
-				cdy = 0.0;
-
-				lastupdate = 1;
+				printf("follow %d\n", cam_curr->follow);
 
 				break;
 			}
@@ -1092,7 +1145,7 @@ void keydown(unsigned int key, int x, int y)
 			case 127:
 			{
 				field_get(curr_field, xi, yi)->instr=0;
-				if (cthread == ghostid && ghostid != -1)
+				if (cam_curr->follow == ghostid && ghostid != -1)
 				{
 					fthreads[ghostid].delta *= -1;
 					fthreads[ghostid].mode = STEP;
@@ -1115,12 +1168,12 @@ void keydown(unsigned int key, int x, int y)
 			}
 			case 3+256:
 			{
-				czoom /= 1.25;
+				cam_curr->zoom /= 1.25;
 				break;
 			}
 			case 4+256:
 			{
-				czoom *= 1.25;
+				cam_curr->zoom *= 1.25;
 				break;
 			}
 			case 8+256:
@@ -1130,9 +1183,9 @@ void keydown(unsigned int key, int x, int y)
 			}
 		}
 		//pthread_mutex_lock(&fthreadsmutex);
-		if (cthread >= 0)
+		if (cam_curr->follow >= 0)
 		{
-			fthread* cfthread = &fthreads[cthread];
+			fthread* cfthread = &fthreads[cam_curr->follow];
 			if (cfthread->alive != DEAD)
 			{
 				switch (key)
@@ -1144,7 +1197,7 @@ void keydown(unsigned int key, int x, int y)
 					}
 					case 6+256:
 					{
-						printf("stack trace for thread %d:\n", cthread);
+						printf("stack trace for thread %d:\n", cam_curr->follow);
 						int i;
 						for (i=0; i<cfthread->stackidx; i++)
 						{
@@ -1154,7 +1207,7 @@ void keydown(unsigned int key, int x, int y)
 					}
 					case 7+256:
 					{
-						cthread = -1;
+						cam_curr->follow = -1;
 						break;
 					}
 					case 9+256:
@@ -1180,13 +1233,13 @@ void keydown(unsigned int key, int x, int y)
 				}
 				case 7+256:
 				{
-					cthread = getfthread(xi, yi);
+					cam_curr->follow = getfthread(xi, yi);
 
-					if (cthread == -1)
+					if (cam_curr->follow == -1)
 					{
 						fthreads[ghostid].x = xi;
 						fthreads[ghostid].y = yi;
-						focusthread(&fthreads[ghostid]);
+						focusthread(cam_curr, &fthreads[ghostid]);
 					}
 					break;
 				}
@@ -1239,10 +1292,10 @@ void idle(void)
 {
 	if (keys[357] || ((uimode == NORMAL || uimode == VISUAL) && (keys['k'] || keys['w'] || keys['W'])))
 	{
-		cy+=(3.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/cczoom;
-		if (cthread != ghostid)
+		cam_curr->y+=(3.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/cam_curr->zoom_curr;
+		if (cam_curr->follow != ghostid)
 		{
-			cthread = -1;
+			cam_curr->follow = -1;
 		}
 		else
 		{
@@ -1255,8 +1308,8 @@ void idle(void)
 	}
 	if (keys[356] || ((uimode == NORMAL || uimode == VISUAL) && (keys['h'] || keys['a'] || keys['A'])))
 	{
-		cx-=(3.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/cczoom;
-		if (cthread != ghostid) cthread = -1;
+		cam_curr->x-=(3.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/cam_curr->zoom_curr;
+		if (cam_curr->follow != ghostid) cam_curr->follow = -1;
 		else
 		{
 			pthread_mutex_lock(&fthreadsmutex);
@@ -1268,8 +1321,8 @@ void idle(void)
 	}
 	if (keys[359] || ((uimode == NORMAL || uimode == VISUAL) && (keys['j'] || keys['s'] || keys['S'])))
 	{
-		cy-=(3.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/cczoom;
-		if (cthread != ghostid) cthread = -1;
+		cam_curr->y-=(3.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/cam_curr->zoom_curr;
+		if (cam_curr->follow != ghostid) cam_curr->follow = -1;
 		else
 		{
 			pthread_mutex_lock(&fthreadsmutex);
@@ -1281,8 +1334,8 @@ void idle(void)
 	}
 	if (keys[358] || ((uimode == NORMAL || uimode == VISUAL) && (keys['l'] || keys['d'] || keys['D'])))
 	{
-		cx+=(3.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/cczoom;
-		if (cthread != ghostid) cthread = -1;
+		cam_curr->x+=(3.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/cam_curr->zoom_curr;
+		if (cam_curr->follow != ghostid) cam_curr->follow = -1;
 		else
 		{
 			pthread_mutex_lock(&fthreadsmutex);
@@ -1293,8 +1346,8 @@ void idle(void)
 		}
 	}
 
-	xi = (cx+swidth/2)/charwidth;
-	yi = (cy+sheight/2)/charheight;
+	xi = (cam_curr->x+cam_curr->zswidth/2)/charwidth;
+	yi = (cam_curr->y+cam_curr->zsheight/2)/charheight;
 
 	glutPostRedisplay();
 }
@@ -1309,10 +1362,8 @@ int main(int argc, char** argv)
 
 	gl_init();
 
-	statuslinelen = swidth / charwidth;
+	statuslinelen = rswidth / charwidth;
 	statusline = (cell*)malloc(statuslinelen*sizeof(cell));
-
-	clrstatus();
 
 	newgame();
 
