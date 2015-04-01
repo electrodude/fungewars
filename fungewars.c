@@ -279,7 +279,7 @@ int search_match(const char** pattern, char target)
 	return 0;
 }
 
-void search2(search_cell* parent, int x, int y, int dx, int dy, const char* pattern)
+void search2(search_cell* parent, int x, int y, int dx, int dy, const char* pattern, int skip)
 {
 	x = wrap(x, curr_field->width);
 	y = wrap(y, curr_field->height);
@@ -287,7 +287,7 @@ void search2(search_cell* parent, int x, int y, int dx, int dy, const char* patt
 	char pc = *pattern;
 	char fc = field_get(curr_field, x, y)->instr;
 
-	//printf("search2(%d, %d, %d, %d, '%c'): '%c'\n", x, y, dx, dy, pc, fc);
+	//printf("search2(%d, %d, %d, %d, '%c', 1): '%c'\n", x, y, dx, dy, pc, fc);
 
 	if (search_status[y][x] & SEARCH_VISITED)
 	{
@@ -303,7 +303,7 @@ void search2(search_cell* parent, int x, int y, int dx, int dy, const char* patt
 
 	search_status[y][x] |= SEARCH_VISITED;
 
-	search_cell* this = search_cell_new(parent, x, y, dx, dy, fc, pc);
+	search_cell* this = search_cell_new(parent, x, y, dx*skip, dy*skip, fc, pc);
 
 	const char* nextpc = pattern;
 
@@ -321,7 +321,7 @@ void search2(search_cell* parent, int x, int y, int dx, int dy, const char* patt
 			MATCHDIR( 0,-1, '[')
 			MATCHDIR( 0, 1, ']')
 			MATCHDIR(-1, 0, 'r')
-			search2(this, x+1, y+0,  1,  0, nextpc);
+			search2(this, x+1, y+0,  1,  0, nextpc, 1);
 			break;
 		}
 		case '<':
@@ -329,7 +329,7 @@ void search2(search_cell* parent, int x, int y, int dx, int dy, const char* patt
 			MATCHDIR( 0, 1, '[')
 			MATCHDIR( 0,-1, ']')
 			MATCHDIR( 1, 0, 'r')
-			search2(this, x-1, y+0, -1,  0, nextpc);
+			search2(this, x-1, y+0, -1,  0, nextpc, 1);
 			break;
 		}
 		case 'v':
@@ -337,7 +337,7 @@ void search2(search_cell* parent, int x, int y, int dx, int dy, const char* patt
 			MATCHDIR(-1, 0, '[')
 			MATCHDIR( 1, 0, ']')
 			MATCHDIR( 0, 1, 'r')
-			search2(this, x+0, y-1,  0, -1, nextpc);
+			search2(this, x+0, y-1,  0, -1, nextpc, 1);
 			break;
 		}
 		case '^':
@@ -345,7 +345,7 @@ void search2(search_cell* parent, int x, int y, int dx, int dy, const char* patt
 			MATCHDIR( 1, 0, '[')
 			MATCHDIR(-1, 0, ']')
 			MATCHDIR( 0,-1, 'r')
-			search2(this, x+0, y+1,  0,  1, nextpc);
+			search2(this, x+0, y+1,  0,  1, nextpc, 1);
 			break;
 		}
 
@@ -355,7 +355,7 @@ void search2(search_cell* parent, int x, int y, int dx, int dy, const char* patt
 			MATCHDIR( 0,-1, '>')
 			MATCHDIR( 1, 0, '^')
 			MATCHDIR(-1, 0, 'v')
-			search2(this, x-dy, y+dx, -dy, dx, nextpc);
+			search2(this, x-dy, y+dx, -dy, dx, nextpc, 1);
 			break;
 		}
 		case ']':
@@ -364,7 +364,7 @@ void search2(search_cell* parent, int x, int y, int dx, int dy, const char* patt
 			MATCHDIR( 0,-1, '<')
 			MATCHDIR( 1, 0, 'v')
 			MATCHDIR(-1, 0, '^')
-			search2(this, x+dy, y-dx, dy, -dx, nextpc);
+			search2(this, x+dy, y-dx, dy, -dx, nextpc, 1);
 			break;
 		}
 
@@ -374,7 +374,7 @@ void search2(search_cell* parent, int x, int y, int dx, int dy, const char* patt
 			MATCHDIR( 0,-1, '^')
 			MATCHDIR( 1, 0, '<')
 			MATCHDIR(-1, 0, '>')
-			search2(this, x-dx, y-dy, -dx, -dy, nextpc);
+			search2(this, x-dx, y-dy, -dx, -dy, nextpc, 1);
 			break;
 		}
 
@@ -382,7 +382,7 @@ void search2(search_cell* parent, int x, int y, int dx, int dy, const char* patt
 		case 's':
 		case '\'':
 		{
-			search2(this, x+2*dx, y+2*dy, dx, dy, nextpc);
+			search2(this, x+2*dx, y+2*dy, dx, dy, nextpc, 2);
 			break;
 		}
 
@@ -390,23 +390,23 @@ void search2(search_cell* parent, int x, int y, int dx, int dy, const char* patt
 		case 'z':	// z is still a nop, right?
 		case ' ':
 		{
-			search2(this, x+dx, y+dy, dx, dy, nextpc);
+			search2(this, x+dx, y+dy, dx, dy, nextpc, 1);
 			break;
 		}
 
 		case '?':
 		{
-			search2(this, x+1, y+0,  1,  0, nextpc);
-			search2(this, x-1, y+0, -1,  0, nextpc);
-			search2(this, x+0, y+1,  0,  1, nextpc);
-			search2(this, x+0, y-1,  0, -1, nextpc);
+			search2(this, x+1, y+0,  1,  0, nextpc, 1);
+			search2(this, x-1, y+0, -1,  0, nextpc, 1);
+			search2(this, x+0, y+1,  0,  1, nextpc, 1);
+			search2(this, x+0, y-1,  0, -1, nextpc, 1);
 			break;
 		}
 
 		case 't':
 		{
-			search2(this, x+dx, y+dy, dx, dy, nextpc);
-			search2(this, x-dx, y-dy, -dx, -dy, nextpc);
+			search2(this, x+dx, y+dy, dx, dy, nextpc, 1);
+			search2(this, x-dx, y-dy, -dx, -dy, nextpc, 1);
 			break;
 		}
 
@@ -417,7 +417,7 @@ void search2(search_cell* parent, int x, int y, int dx, int dy, const char* patt
 			{
 				break;
 			}
-			search2(this, x+dx, y+dy, dx, dy, nextpc);
+			search2(this, x+dx, y+dy, dx, dy, nextpc, 1);
 			break;
 		}
 	}
@@ -523,7 +523,7 @@ void search(const char* pattern)
 
 					search_cell* this = search_cell_new(NULL, x, y, dx, dy, *pattern, *pattern);
 
-					search2(this, x+dx, y+dy, dx, dy, pattern+1);
+					search2(this, x+dx, y+dy, dx, dy, pattern+1, 1);
 
 					search_cell_kill(this);
 				}
