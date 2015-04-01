@@ -15,8 +15,6 @@
 #include <GLUT/glut.h>
 #endif
 
-#include <png.h>
-
 #include "fungewars.h"
 
 extern int font;
@@ -44,7 +42,7 @@ extern color color_fg;
 
 extern color colors[18];
 
-
+// should this be in a seperate png_load.h?
 GLuint png_texture_load(const char* file_name, int* width, int* height);
 
 

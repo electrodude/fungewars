@@ -13,9 +13,10 @@ find_package(PNG REQUIRED)
 find_package(Threads REQUIRED)
 
 add_executable(fungewars
-    fungewars.c
-    interpreter
-    graphics
+	fungewars.c
+	png_to_tex
+	interpreter
+	graphics
 )
 
 target_link_libraries(fungewars glut GLU GL m pthread png)
