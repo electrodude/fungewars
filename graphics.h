@@ -46,6 +46,7 @@ extern color colors[18];
 GLuint png_texture_load(const char* file_name, int* width, int* height);
 
 
+view* view_reset(view* this, field* f, float sx, float sy, float swidth, float sheight, float x, float y, float zoom);
 view* view_new(field* f, float sx, float sy, float swidth, float sheight, float x, float y, float zoom);
 
 void view_kill(view* this);

@@ -1,3 +1,5 @@
+#include <stdlib.h>
+#include <stdio.h>
 #include <math.h>
 
 #include "fungewars.h"
@@ -91,9 +93,14 @@ void glputcell(float x, float y, cell* c)
 }
 
 
-view* view_new(field* f, float sx, float sy, float swidth, float sheight, float x, float y, float zoom)
+view* view_reset(view* this, field* f, float sx, float sy, float swidth, float sheight, float x, float y, float zoom)
 {
-	view* this = malloc(sizeof(view));
+	int isnew = this == NULL;
+
+	if (isnew)
+	{
+		this = malloc(sizeof(view));
+	}
 
 	this->field = f;
 
@@ -113,23 +120,32 @@ view* view_new(field* f, float sx, float sy, float swidth, float sheight, float 
 
 	this->state = ACTIVE;
 
-	if (ncams == maxcams)
+	if (isnew)
 	{
-		int oldmaxcams = maxcams;
-		maxcams *= 2;
-		cams = realloc(cams, maxcams*sizeof(view*));
-		for (int i=oldmaxcams; i<maxcams; i++)
+		if (ncams == maxcams)
 		{
-			cams[i] = NULL;
+			int oldmaxcams = maxcams;
+			maxcams *= 2;
+			cams = realloc(cams, maxcams*sizeof(view*));
+			for (int i=oldmaxcams; i<maxcams; i++)
+			{
+				cams[i] = NULL;
+			}
 		}
+
+		this->id = ncams;
+		cams[ncams++] = this;
+
+		printf("New view: id = %d\n", this->id);
+
 	}
 
-	this->id = ncams;
-	cams[ncams++] = this;
-
-	printf("New view: id = %d\n", this->id);
-
 	return this;
+}
+
+view* view_new(field* f, float sx, float sy, float swidth, float sheight, float x, float y, float zoom)
+{
+	return view_reset(NULL, f, sx, sy, swidth, sheight, x, y, zoom);
 }
 
 void view_kill(view* this)

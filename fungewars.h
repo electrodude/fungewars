@@ -172,6 +172,7 @@ search_cell* search_cell_new(search_cell* parent, int x, int y, int dx, int dy, 
 
 void search_cell_kill(search_cell* this);
 
+field* field_reset(field* this, int width, int height);
 field* field_new(int width, int height);
 
 void field_kill(field* f);

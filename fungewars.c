@@ -67,14 +67,6 @@ int wrap(int x, int m)
 
 void newgame(void)
 {
-	for (int i=0; i<maxcams; i++)
-	{
-		if (cams[i] != NULL)
-		{
-			view_kill(cams[i]);
-		}
-	}
-
 	if (run == RUN)
 	{
 		run = STEP;
@@ -82,16 +74,11 @@ void newgame(void)
 
 	while (run == STEP);
 
-	if (curr_field != NULL)
-	{
-		field_kill(curr_field);
-	}
+	curr_field = field_reset(curr_field, 256, 256);
 
-	curr_field = field_new(256, 256);
+	cam_curr = view_reset(cams[0], curr_field, 0.0, 0.0, rswidth, rsheight, 0.0, 0.0, 1.0);
 
-	cam_curr = view_new(curr_field, 0.0, 0.0, rswidth, rsheight, 0.0, 0.0, 1.0);
-
-	view* cam2 = view_new(curr_field, 0.0, rsheight/2, rswidth, rsheight/2, 0.0, 0.0, 1.0);
+	view* cam2 = view_reset(cams[1], curr_field, 0.0, rsheight/2, rswidth, rsheight/2, 0.0, 0.0, 1.0);
 	cam2->state = DISABLED;
 
 	unsigned int i;
@@ -569,10 +556,12 @@ search_done:
 
 }
 
-
-field* field_new(int width, int height)
+field* field_reset(field* this, int width, int height)
 {
-	field* this = (field*)malloc(sizeof(field));
+	if (this == NULL)
+	{
+		this = (field*)malloc(sizeof(field));
+	}
 
 	this->width = width;
 	this->height = height;
@@ -596,6 +585,11 @@ field* field_new(int width, int height)
 	}
 
 	return this;
+}
+
+field* field_new(int width, int height)
+{
+	return field_reset(NULL, width, height);
 }
 
 void field_kill(field* f)
