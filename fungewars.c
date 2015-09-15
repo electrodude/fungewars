@@ -558,7 +558,9 @@ search_done:
 
 field* field_reset(field* this, int width, int height)
 {
-	if (this == NULL)
+	int isnew = this == NULL;
+
+	if (isnew)
 	{
 		this = (field*)malloc(sizeof(field));
 	}
@@ -566,9 +568,16 @@ field* field_reset(field* this, int width, int height)
 	this->width = width;
 	this->height = height;
 
-	cell (*cells)[height][width] = malloc(sizeof(cell[height][width]));
+	cell (*cells)[height][width] = this->cells;
 
-	this->cells = cells;
+	if (isnew)
+	{
+		this->cells = cells = malloc(sizeof(cell[height][width]));
+	}
+	else
+	{
+		this->cells = cells = realloc(cells, sizeof(cell[height][width]));
+	}
 
 	int x;
 	int y;
