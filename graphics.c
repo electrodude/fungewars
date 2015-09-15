@@ -88,13 +88,13 @@ void gr_putcell(float x, float y, cell* c)
 {
 	if (c->bg != NULL)
 	{
-		glColor4fv(c->bg);
+		glColor4fv((float*)c->bg);
 		gr_putc(x, y, 0xDB);
 	}
 
 	if (c->instr && c->fg != NULL)
 	{
-		glColor4fv(c->fg);
+		glColor4fv((float*)c->fg);
 		gr_putc(x, y, c->instr);
 	}
 }

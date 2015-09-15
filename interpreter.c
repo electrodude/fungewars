@@ -1,3 +1,5 @@
+#define _XOPEN_SOURCE 500
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -88,7 +90,7 @@ fthread* dupfthread(fthread** parent)
 
 	if (offset)
 	{
-		printf("offset=%X, (parent-fthreads)/sizeof(fthread)=0x%X\n", offset, ((*parent)-fthreads)/sizeof(fthread));
+		printf("offset=%lX, (parent-fthreads)/sizeof(fthread)=0x%lX\n", offset, ((*parent)-fthreads)/sizeof(fthread));
 	}
 
 	cfthread->parent = (*parent)->id;
@@ -661,7 +663,6 @@ int execinstr(fthread* cfthread, cell* ccell)
 
 void* interpreter(void* threadid)
 {
-	int id = (int)threadid;
 
 #if 0
 	unsigned int i;
@@ -705,6 +706,6 @@ void* interpreter(void* threadid)
 		}
 	}
 
-	printf("ERROR: interpreter thread quitting!\n", id);
+	printf("ERROR: interpreter thread quitting!\n");
 	pthread_exit(NULL);
 }

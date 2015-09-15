@@ -56,7 +56,7 @@ int yiv;
 
 coord marks[N_KEYS];
 
-pthread_t threads[NUM_THREADS];
+pthread_t interpreter_thread[NUM_THREADS];
 pthread_mutex_t fthreadsmutex;
 
 int wrap(int x, int m)
@@ -1490,16 +1490,11 @@ int main(int argc, char** argv)
 	pthread_attr_init(&threadattr);
 	//pthread_attr_setstacksize(&threadattr, 2097152);
 
-	int i;
-	for (i=0; i<NUM_THREADS; i++)
+	int rc = pthread_create(interpreter_thread, NULL, interpreter, NULL);
+	if (rc)
 	{
-		printf("main: creating thread %d\n", i);
-		int rc = pthread_create(&threads[i], NULL, interpreter, (void *)i);
-		if (rc)
-		{
-			printf("ERROR; return code from pthread_create() is %d\n", rc);
-			exit(-1);
-		}
+		printf("ERROR; return code from pthread_create() is %d\n", rc);
+		exit(-1);
 	}
 
 	gr_loop();
