@@ -11,9 +11,9 @@ find_package(OpenGL REQUIRED)
 find_package(PNG REQUIRED)
 find_package(Threads REQUIRED)
 
-set(GLFW_BUILD_EXAMPLES OFF)
-set(GLFW_BUILD_TESTS OFF)
-set(GLFW_BUILD_DOCS OFF)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "Build the GLFW example programs")
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "Build the GLFW test programs")
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "Build the GLFW documentation")
 add_subdirectory(glfw)
 include_directories(glfw/include)
 
