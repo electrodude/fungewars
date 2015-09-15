@@ -8,13 +8,16 @@
 
 #include <pthread.h>
 
+#define GLFW_INCLUDE_GLU
+#include <GLFW/glfw3.h>
+
 #define max(a,b) ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a > _b ? _a : _b; })
 #define min(a,b) ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a < _b ? _a : _b; })
 
 #define CWIDTH 256
 #define CHEIGHT 256
 
-#define N_KEYS 512
+#define N_KEYS GLFW_KEY_LAST
 
 // should this be in graphics.h?
 typedef float color[4];
@@ -198,16 +201,12 @@ void focuscam(view* v, int x, int y);
 
 void docmd(char* cmd);
 
-void keydown(unsigned int key, int x, int y);
+void keydown(unsigned int key, int mods);
 
-void kb1(unsigned char key, int x, int y);
+void gr_charmods_callback(GLFWwindow* window, unsigned int key, int mods);
 
-void kb1u(unsigned char key, int x, int y);
+void gr_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
-void kb2(int key, int x, int y);
-
-void kb2u(int key, int x, int y);
-
-void idle(void);
+void gr_idle(void);
 
 int main(int argc, char** argv);

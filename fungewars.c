@@ -630,7 +630,7 @@ void docmd(char* cmd)
 			}
 			else if (!strcmp(cmdname, "q"))
 			{
-				glutLeaveMainLoop();
+				glfwSetWindowShouldClose(gr_window, GL_TRUE);
 			}
 			else if (!strcmp(cmdname, "load"))
 			{
@@ -698,12 +698,20 @@ void docmd(char* cmd)
 
 }
 
-void keydown(unsigned int key, int x, int y)
+void gr_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+	if (key < 0) return;
+
+	if (action == GLFW_RELEASE)
+	{
+		keys[key] = 0;
+		return;
+	}
+
 	int keyused = 0;
 
 	int t1;
-	if (key == 27)
+	if (key == GLFW_KEY_ESCAPE)
 	{
 		keyused = 1;
 
@@ -715,6 +723,312 @@ void keydown(unsigned int key, int x, int y)
 		uiprevmode = NORMAL;
 		clrstatus();
 	}
+
+	switch (uimode)
+	{
+		case NORMAL:
+		{
+			//int pfx = 0;
+
+			switch (key)
+			{
+				// mode switching
+				case GLFW_KEY_ENTER:
+				case '\r':
+				case '\n':
+				{
+					keyused = 1;
+
+					run = (run==RUN) ? PAUSED : RUN;
+					break;
+				}
+			}
+			break;
+		}
+		case REPLACE:
+		{
+			switch (key)
+			{
+				case GLFW_KEY_TAB:
+				case GLFW_KEY_BACKSPACE:
+				case GLFW_KEY_DELETE:
+				{
+					break;
+				}
+				/*
+				case GLFW_KEY_ENTER:
+				case '\r':
+				case '\n':
+				{
+					if (cam_curr->follow == ghostid && ghostid != -1)
+					{
+						fthreads[ghostid].mode = STEP;
+					}
+					break;
+				}
+				*/
+			}
+
+			break;
+		}
+		case VISUAL:
+		{
+			switch (key)
+			{
+			}
+			break;
+		}
+		case EX:
+		{
+			switch (key)
+			{
+				case GLFW_KEY_BACKSPACE:
+				{
+					setstatus_color(--exlen, ' ', &color_status_fg, &color_clear);
+
+					if (exlen > 0)
+					{
+						excmd[exlen] = 0;
+					}
+					else
+					{
+						uimode = NORMAL;
+						clrstatus();
+					}
+					break;
+				}
+
+				case GLFW_KEY_UP: // up
+				{
+					keyused = 1;
+					break;
+				}
+				case GLFW_KEY_DOWN: // down
+				{
+					keyused = 1;
+					break;
+				}
+				case GLFW_KEY_LEFT: // left
+				{
+					keyused = 1;
+					break;
+				}
+				case GLFW_KEY_RIGHT: // right
+				{
+					keyused = 1;
+					break;
+				}
+
+				case GLFW_KEY_TAB: // tab
+				{
+					keyused = 1;
+					break;
+				}
+
+				case GLFW_KEY_ENTER:
+				case '\r':
+				case '\n':
+				{
+					keyused = 1;
+
+					uimode = NORMAL;
+					clrstatus();
+
+					docmd(excmd);
+
+					break;
+				}
+			}
+			break;
+		}
+	}
+
+	if (!keyused && (uimode == NORMAL || uimode == VISUAL))
+	{
+		switch (key)
+		{
+		}
+	}
+
+	if (!keyused)
+	{
+		switch (key)
+		{
+			case GLFW_KEY_TAB: // tab
+			{
+				if (!mods & GLFW_MOD_SHIFT)
+				{
+					t1 = cam_curr->follow>=0 ? cam_curr->follow : fthreadslen-1;
+					do
+					{
+						cam_curr->follow = (cam_curr->follow+1)%fthreadslen;
+					}
+					while ((fthreads[cam_curr->follow].alive == DEAD  && t1 != cam_curr->follow) || cam_curr->follow == ghostid);
+					if (t1==cam_curr->follow)
+					{
+						cam_curr->follow = -1;
+					}
+					else
+					{
+						focuscam(cam_curr, fthreads[cam_curr->follow].x, fthreads[cam_curr->follow].y);
+					}
+				}
+				else
+				{
+					t1 = cam_curr->follow>=0 ? cam_curr->follow : 0;
+					do
+					{
+						cam_curr->follow = (cam_curr->follow-1+fthreadslen)%fthreadslen;
+					}
+					while ((fthreads[cam_curr->follow].alive == DEAD  && t1 != cam_curr->follow) || cam_curr->follow == ghostid);
+					if (t1==cam_curr->follow)
+					{
+						cam_curr->follow = -1;
+					}
+					else
+					{
+						focuscam(cam_curr, fthreads[cam_curr->follow].x, fthreads[cam_curr->follow].y);
+					}
+
+				}
+
+				printf("follow %d\n", cam_curr->follow);
+
+				break;
+			}
+			/*
+			case GLFW_KEY_BACKSPACE:
+			case GLFW_KEY_DELETE:
+			{
+				field_get(curr_field, xi, yi)->instr=0;
+				if (cam_curr->follow == ghostid && ghostid != -1)
+				{
+					fthreads[ghostid].delta *= -1;
+					fthreads[ghostid].mode = STEP;
+				}
+				break;
+			}
+			*/
+
+			case GLFW_KEY_F1:
+			{
+				if (delay>1) delay/=2;
+				printf("delay: %d\n", delay);
+				break;
+			}
+			case GLFW_KEY_F2:
+			{
+				if (delay<2000000) delay*=2;;
+				printf("delay: %d\n", delay);
+				break;
+			}
+			case GLFW_KEY_F3:
+			{
+				cam_curr->zoom /= 1.25;
+				break;
+			}
+			case GLFW_KEY_F4:
+			{
+				cam_curr->zoom *= 1.25;
+				break;
+			}
+			case GLFW_KEY_F8:
+			{
+				run = (run==RUN) ? PAUSED : RUN;
+				break;
+			}
+		}
+		//pthread_mutex_lock(&fthreadsmutex);
+		if (cam_curr->follow >= 0)
+		{
+			fthread* cfthread = &fthreads[cam_curr->follow];
+			if (cfthread->alive != DEAD)
+			{
+				switch (key)
+				{
+					case GLFW_KEY_F5:
+					{
+						cfthread->mode = STEP;
+						break;
+					}
+					case GLFW_KEY_F6:
+					{
+						printf("stack trace for thread %d:\n", cam_curr->follow);
+						int i;
+						for (i=0; i<cfthread->stackidx; i++)
+						{
+							printf("%d: %d\n", i, cfthread->stack[i]);
+						}
+						break;
+					}
+					case GLFW_KEY_F7:
+					{
+						cam_curr->follow = -1;
+						break;
+					}
+					case GLFW_KEY_F9:
+					{
+						cfthread->mode = (cfthread->mode==RUN) ? PAUSED : RUN;
+						break;
+					}
+					default:
+					{
+						break;
+					}
+				}
+			}
+		}
+		else
+		{
+			switch (key)
+			{
+				case GLFW_KEY_F5:
+				{
+					run = STEP;
+					break;
+				}
+				case GLFW_KEY_F7:
+				{
+					cam_curr->follow = getfthread(xi, yi);
+
+					if (cam_curr->follow == -1)
+					{
+						fthreads[ghostid].x = xi;
+						fthreads[ghostid].y = yi;
+						focusthread(cam_curr, &fthreads[ghostid]);
+					}
+					break;
+				}
+				case GLFW_KEY_F9:
+				{	run = (run==RUN) ? PAUSED : RUN;
+					break;
+				}
+				default:
+				{
+					break;
+				}
+			}
+		}
+		//pthread_mutex_unlock(&fthreadsmutex);
+	}
+
+	uilastcmd = key;
+
+	if (!keyused)
+	{
+		keys[key] = 1;
+	}
+
+	printf("key: %d, mods: %X, used: %d\n", key, mods, keyused);
+}
+
+void gr_charmods_callback(GLFWwindow* window, unsigned int key, int mods)
+{
+	if (key < 0) return;
+
+	int keyused = 0;
+
+	int t1;
 
 	switch (uimode)
 	{
@@ -839,13 +1153,6 @@ void keydown(unsigned int key, int x, int y)
 		{
 			switch (key)
 			{
-				case 9:
-				case 25:
-				case 8:
-				case 127:
-				{
-					break;
-				}
 				/*
 				case '\r':
 				case '\n':
@@ -886,49 +1193,6 @@ void keydown(unsigned int key, int x, int y)
 		{
 			switch (key)
 			{
-				case 8:
-				{
-					setstatus_color(--exlen, ' ', &color_status_fg, &color_clear);
-
-					if (exlen > 0)
-					{
-						excmd[exlen] = 0;
-					}
-					else
-					{
-						uimode = NORMAL;
-						clrstatus();
-					}
-					break;
-				}
-
-				case 357: // up
-				{
-					keyused = 1;
-					break;
-				}
-				case 359: // down
-				{
-					keyused = 1;
-					break;
-				}
-				case 356: // left
-				{
-					keyused = 1;
-					break;
-				}
-				case 358: // right
-				{
-					keyused = 1;
-					break;
-				}
-
-				case 9: // tab
-				{
-					keyused = 1;
-					break;
-				}
-
 				case '\r':
 				case '\n':
 				{
@@ -1101,89 +1365,6 @@ void keydown(unsigned int key, int x, int y)
 	{
 		switch (key)
 		{
-			case 9: // tab
-			{
-				t1 = cam_curr->follow>=0 ? cam_curr->follow : fthreadslen-1;
-				do
-				{
-					cam_curr->follow = (cam_curr->follow+1)%fthreadslen;
-				}
-				while ((fthreads[cam_curr->follow].alive == DEAD  && t1 != cam_curr->follow) || cam_curr->follow == ghostid);
-				if (t1==cam_curr->follow)
-				{
-					cam_curr->follow = -1;
-				}
-				else
-				{
-					focuscam(cam_curr, fthreads[cam_curr->follow].x, fthreads[cam_curr->follow].y);
-				}
-
-				printf("follow %d\n", cam_curr->follow);
-
-				break;
-			}
-			case 25: // un-tab?
-			{
-				t1 = cam_curr->follow>=0 ? cam_curr->follow : 0;
-				do
-				{
-					cam_curr->follow = (cam_curr->follow-1+fthreadslen)%fthreadslen;
-				}
-				while ((fthreads[cam_curr->follow].alive == DEAD  && t1 != cam_curr->follow) || cam_curr->follow == ghostid);
-				if (t1==cam_curr->follow)
-				{
-					cam_curr->follow = -1;
-				}
-				else
-				{
-					focuscam(cam_curr, fthreads[cam_curr->follow].x, fthreads[cam_curr->follow].y);
-				}
-
-				printf("follow %d\n", cam_curr->follow);
-
-				break;
-			}
-			/*
-			case 8:
-			case 127:
-			{
-				field_get(curr_field, xi, yi)->instr=0;
-				if (cam_curr->follow == ghostid && ghostid != -1)
-				{
-					fthreads[ghostid].delta *= -1;
-					fthreads[ghostid].mode = STEP;
-				}
-				break;
-			}
-			*/
-
-			case 1+256:
-			{
-				if (delay>1) delay/=2;
-				printf("delay: %d\n", delay);
-				break;
-			}
-			case 2+256:
-			{
-				if (delay<2000000) delay*=2;;
-				printf("delay: %d\n", delay);
-				break;
-			}
-			case 3+256:
-			{
-				cam_curr->zoom /= 1.25;
-				break;
-			}
-			case 4+256:
-			{
-				cam_curr->zoom *= 1.25;
-				break;
-			}
-			case 8+256:
-			{
-				run = (run==RUN) ? PAUSED : RUN;
-				break;
-			}
 		}
 		//pthread_mutex_lock(&fthreadsmutex);
 		if (cam_curr->follow >= 0)
@@ -1193,31 +1374,6 @@ void keydown(unsigned int key, int x, int y)
 			{
 				switch (key)
 				{
-					case 5+256:
-					{
-						cfthread->mode = STEP;
-						break;
-					}
-					case 6+256:
-					{
-						printf("stack trace for thread %d:\n", cam_curr->follow);
-						int i;
-						for (i=0; i<cfthread->stackidx; i++)
-						{
-							printf("%d: %d\n", i, cfthread->stack[i]);
-						}
-						break;
-					}
-					case 7+256:
-					{
-						cam_curr->follow = -1;
-						break;
-					}
-					case 9+256:
-					{
-						cfthread->mode = (cfthread->mode==RUN) ? PAUSED : RUN;
-						break;
-					}
 					default:
 					{
 						break;
@@ -1229,27 +1385,6 @@ void keydown(unsigned int key, int x, int y)
 		{
 			switch (key)
 			{
-				case 5+256:
-				{
-					run = STEP;
-					break;
-				}
-				case 7+256:
-				{
-					cam_curr->follow = getfthread(xi, yi);
-
-					if (cam_curr->follow == -1)
-					{
-						fthreads[ghostid].x = xi;
-						fthreads[ghostid].y = yi;
-						focusthread(cam_curr, &fthreads[ghostid]);
-					}
-					break;
-				}
-				case 9+256:
-				{	run = (run==RUN) ? PAUSED : RUN;
-					break;
-				}
 				default:
 				{
 					break;
@@ -1261,41 +1396,14 @@ void keydown(unsigned int key, int x, int y)
 
 	uilastcmd = key;
 
-	if (!keyused)
+	printf("char: %c, mods: %X, used: %d\n", key, mods, keyused);
+}
+
+void gr_idle(void)
+{
+	if (keys[GLFW_KEY_UP] || ((uimode == NORMAL || uimode == VISUAL) && (keys['K'] || keys['W'])))
 	{
-		keys[key] = 1;
-	}
-}
-
-void kb1(unsigned char key, int x, int y)
-{
-	modkeys = glutGetModifiers();
-	keydown(key, x, y);
-}
-
-void kb1u(unsigned char key, int x, int y)
-{
-	modkeys = glutGetModifiers();
-	keys[key] = 0;
-}
-
-void kb2(int key, int x, int y)
-{
-	modkeys = glutGetModifiers();
-	keydown(key+256, x, y);
-}
-
-void kb2u(int key, int x, int y)
-{
-	modkeys = glutGetModifiers();
-	keys[key+256] = 0;
-}
-
-void idle(void)
-{
-	if (keys[357] || ((uimode == NORMAL || uimode == VISUAL) && (keys['k'] || keys['w'] || keys['W'])))
-	{
-		cam_curr->y+=(3.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/cam_curr->zoom_curr;
+		cam_curr->y+=(3.0+6.0*(modkeys&GLFW_MOD_ALT))/cam_curr->zoom_curr;
 		if (cam_curr->follow != ghostid)
 		{
 			cam_curr->follow = -1;
@@ -1309,9 +1417,9 @@ void idle(void)
 			pthread_mutex_unlock(&fthreadsmutex);
 		}
 	}
-	if (keys[356] || ((uimode == NORMAL || uimode == VISUAL) && (keys['h'] || keys['a'] || keys['A'])))
+	if (keys[GLFW_KEY_LEFT] || ((uimode == NORMAL || uimode == VISUAL) && (keys['H'] || keys['A'])))
 	{
-		cam_curr->x-=(3.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/cam_curr->zoom_curr;
+		cam_curr->x-=(3.0+6.0*(modkeys&GLFW_MOD_ALT))/cam_curr->zoom_curr;
 		if (cam_curr->follow != ghostid) cam_curr->follow = -1;
 		else
 		{
@@ -1322,9 +1430,9 @@ void idle(void)
 			pthread_mutex_unlock(&fthreadsmutex);
 		}
 	}
-	if (keys[359] || ((uimode == NORMAL || uimode == VISUAL) && (keys['j'] || keys['s'] || keys['S'])))
+	if (keys[GLFW_KEY_DOWN] || ((uimode == NORMAL || uimode == VISUAL) && (keys['J'] || keys['S'])))
 	{
-		cam_curr->y-=(3.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/cam_curr->zoom_curr;
+		cam_curr->y-=(3.0+6.0*(modkeys&GLFW_MOD_ALT))/cam_curr->zoom_curr;
 		if (cam_curr->follow != ghostid) cam_curr->follow = -1;
 		else
 		{
@@ -1335,9 +1443,9 @@ void idle(void)
 			pthread_mutex_unlock(&fthreadsmutex);
 		}
 	}
-	if (keys[358] || ((uimode == NORMAL || uimode == VISUAL) && (keys['l'] || keys['d'] || keys['D'])))
+	if (keys[GLFW_KEY_RIGHT] || ((uimode == NORMAL || uimode == VISUAL) && (keys['L'] || keys['D'])))
 	{
-		cam_curr->x+=(3.0+6.0*(modkeys&GLUT_ACTIVE_ALT))/cam_curr->zoom_curr;
+		cam_curr->x+=(3.0+6.0*(modkeys&GLFW_MOD_ALT))/cam_curr->zoom_curr;
 		if (cam_curr->follow != ghostid) cam_curr->follow = -1;
 		else
 		{
@@ -1351,8 +1459,6 @@ void idle(void)
 
 	xi = (cam_curr->x+cam_curr->zswidth/2)/charwidth;
 	yi = (cam_curr->y+cam_curr->zsheight/2)/charheight;
-
-	glutPostRedisplay();
 }
 
 int main(int argc, char** argv)
@@ -1363,7 +1469,7 @@ int main(int argc, char** argv)
 	excmd = (char*)malloc(exmax*sizeof(char));
 	exlen = 0;
 
-	gl_init();
+	gr_init();
 
 	statuslinelen = rswidth / charwidth;
 	statusline = (cell*)malloc(statuslinelen*sizeof(cell));
@@ -1396,6 +1502,6 @@ int main(int argc, char** argv)
 		}
 	}
 
-	glutMainLoop();
+	gr_loop();
 	return EXIT_SUCCESS;
 }

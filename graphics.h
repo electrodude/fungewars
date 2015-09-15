@@ -1,21 +1,11 @@
 #pragma once
 
-// Linux - should be expression and not just 0 or 1
-#if 1
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/glut.h>
-#endif
-
-// OSX - should be expression and not just 0 or 1
-#if 0
-#include <OpenGL/OpenGL.h>
-#include <OpenGL/gl.h>
-#include <OpenGL/glu.h>
-#include <GLUT/glut.h>
-#endif
+#define GLFW_INCLUDE_GLU
+#include <GLFW/glfw3.h>
 
 #include "fungewars.h"
+
+extern GLFWwindow* gr_window;
 
 extern int font;
 extern int fontwidth;
@@ -56,10 +46,8 @@ void view_resize(view* this, int newx, int newy, int newwidth, int newheight);
 void view_render(view* this);
 
 
-void glputc(float x, float y, int c);
+void gr_putc(float x, float y, int c);
 
-void display(void);
+void gr_loop(void);
 
-void reshape(int width, int height);
-
-void gl_init();
+void gr_init(void);

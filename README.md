@@ -3,6 +3,18 @@ Fungewars
 
 [Corewars](http://www.corewars.org/) in [Funge](http://quadium.net/funge/spec98.html)
 
+## Installation
+
+Prerequisites: C compiler, CMake build system, libpng, pthreads, OpenGL, GLFW 3.1
+
+If you download Fungewars via `git clone --recursive`, Git will download GLFW for you.  Otherwise, you'll need to manually put GLFW's source in a directory inside the fungewars directory named `glfw` .
+
+CMake should be able to build Fungewars from there.
+
+I'd like Fungewars to work on any system, but I've only tested it on Gentoo Linux.  I'm pretty sure it will work on any other Linux, and it might also work on OSX.  I'm not sure if it will work on Windows under MinGW because I don't know if MinGW supports pthreads, but that should be the only problem.
+
+Please file bugs or pull requests if you have any problems or solutions related to getting Fungewars to work on your system.
+
 ## Documentation
 
 TODO

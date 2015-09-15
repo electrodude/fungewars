@@ -26,6 +26,8 @@ int timenow=0;
 int timelast=0;
 int timebase=0;
 
+GLFWwindow* gr_window;
+
 
 #define B0 0.0
 #define B1 0.5
@@ -63,8 +65,13 @@ color colors[18]=
 
 };
 
+static void gr_error_callback(int error, const char* description)
+{
+	fputs(description, stderr);
+}
 
-void glputc(float x, float y, int c)
+
+void gr_putc(float x, float y, int c)
 {
 	c&=255;
 	float charx = ((float)(c%16))/16;
@@ -77,18 +84,18 @@ void glputc(float x, float y, int c)
 	glEnd();
 }
 
-void glputcell(float x, float y, cell* c)
+void gr_putcell(float x, float y, cell* c)
 {
 	if (c->bg != NULL)
 	{
 		glColor4fv(c->bg);
-		glputc(x, y, 0xDB);
+		gr_putc(x, y, 0xDB);
 	}
 
 	if (c->instr && c->fg != NULL)
 	{
 		glColor4fv(c->fg);
-		glputc(x, y, c->instr);
+		gr_putc(x, y, c->instr);
 	}
 }
 
@@ -247,7 +254,7 @@ void view_render(view* this)
 	{
 		for (x=max(ccx/charwidth,0); x<min((this->zswidth+ccx)/charwidth+1,f->width); x++)
 		{
-			glputcell(x*charwidth - ccx, y*charheight - ccy, field_get(f, x, y));
+			gr_putcell(x*charwidth - ccx, y*charheight - ccy, field_get(f, x, y));
 		}
 	}
 	glDisable(GL_TEXTURE_2D);
@@ -366,146 +373,96 @@ void view_render(view* this)
 	glPopMatrix();
 }
 
-void display(void)
+void gr_loop(void)
 {
-/*
-	if (cthread >= 0)
+	while (!glfwWindowShouldClose(gr_window))
 	{
-		fthread cfthread = fthreads[cthread];
-		cx = cfthread.x*charwidth - swidth/2;
-		ccdx += cfthread.dx*cfthread.delta*charwidth;
-		cy = cfthread.y*charheight - sheight/2;
-		ccdy += cfthread.dy*cfthread.delta*charheight;
-	}
+		glfwGetFramebufferSize(gr_window, &rswidth, &rsheight);
 
-	if (abs(ccx-cx)>swidth || abs(ccy-cy)>sheight)
-	{
-		ccx = lastcx = cx;
-		ccy = lastcy = cy;
-		lastupdate = 0;
-	}
-	else if (ccdx || ccdy)
-	{
-		cdx = ccdx/lastupdate;
-		ccdx = 0.0;
-		cdy = ccdy/lastupdate;
-		ccdy = 0.0;
-		lastupdate = 0;
-		lastcx = cx;
-		lastcy = cy;
-	}
-	else if (abs(cx-lastcx)>=4*charwidth || abs(cy-lastcy)>=4*charheight)
-	{
-		cdx = (cx-lastcx)/lastupdate;
-		cdy = (cy-lastcy)/lastupdate;
-		lastupdate = 0;
-		lastcx = cx;
-		lastcy = cy;
-	}
-
-	lastupdate++;
-*/
-
-	glOrtho(0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
-
-	glClear(GL_COLOR_BUFFER_BIT);
-	glLoadIdentity();
-
-	gluLookAt(0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-	glTranslatef(0.0, -1, -1);
-
-	for (int i=0; i<maxcams; i++)
-	{
-		if (cams[i] != NULL && cams[i]->state != DISABLED)
+		if (cams[1]->state != DISABLED)
 		{
-			view_render(cams[i]);
+			view_resize(cams[0], 0.0, 0.0,        rswidth, rsheight/2);
+			view_resize(cams[1], 0.0, rsheight/2, rswidth, rsheight/2);
 		}
+		else
+		{
+			view_resize(cams[0], 0.0, 0.0,        rswidth, rsheight);
+		}
+
+		glViewport(0, 0, rswidth, rsheight);
+
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glOrtho(0, rswidth, 0, rsheight, -100000.0, 100000.0);
+
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+
+		glOrtho(0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
+
+		glClear(GL_COLOR_BUFFER_BIT);
+		glLoadIdentity();
+
+		gluLookAt(0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+		glTranslatef(0.0, -1, -1);
+
+		for (int i=0; i<maxcams; i++)
+		{
+			if (cams[i] != NULL && cams[i]->state != DISABLED)
+			{
+				view_render(cams[i]);
+			}
+		}
+
+		// status line
+		glEnable(GL_TEXTURE_2D);
+		for (int x=0; x<statuslinelen; x++)
+		{
+			gr_putcell(x*charwidth, 1.5, &statusline[x]);
+		}
+		glDisable(GL_TEXTURE_2D);
+
+
+		frame++;
+		timelast=glfwGetTime();
+		if (timelast - timebase > 1000)
+		{
+			//printf("FPS:%4.2f\n",frame*1000.0/(timelast-timebase));
+			timebase = timelast;
+			frame = 0;
+		}
+
+		glfwSwapBuffers(gr_window);
+
+		gr_idle();
+
+		glfwPollEvents();
 	}
-
-	// status line
-	glEnable(GL_TEXTURE_2D);
-	for (int x=0; x<statuslinelen; x++)
-	{
-		glputcell(x*charwidth, 1.5, &statusline[x]);
-	}
-	glDisable(GL_TEXTURE_2D);
-
-
-	frame++;
-	timelast=glutGet(GLUT_ELAPSED_TIME);
-	if (timelast - timebase > 1000)
-	{
-		//printf("FPS:%4.2f\n",frame*1000.0/(timelast-timebase));
-		timebase = timelast;
-		frame = 0;
-	}
-
-	glutSwapBuffers();
 }
 
-void reshape(int w, int h)
+void gr_init(void)
 {
-	rswidth = w;
-	rsheight = h;
+	glfwSetErrorCallback(gr_error_callback);
 
-	if (cams[1]->state != DISABLED)
+	if (!glfwInit())
 	{
-		view_resize(cams[0], 0.0, 0.0, w, h/2);
-		view_resize(cams[1], 0.0, h/2, w, h/2);
-	}
-	else
-	{
-		view_resize(cams[0], 0.0, 0.0, w, h);
+		puts("glfwInit() failed!");
+		glfwTerminate();
+		exit(0);
 	}
 
-	GLdouble size;
-	GLdouble aspect;
+	gr_window = glfwCreateWindow(rswidth, rsheight, "Fungewars", NULL, NULL);
 
-	/* Use the whole window. */
-	glViewport(0, 0, w, h);
-
-	/* We are going to do some 2-D orthographic drawing. */
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(0, w, 0, h, -100000.0, 100000.0);
-	//size = (GLdouble)((w >= h) ? w : h) / 2.0;
-	if (w <= h)
+	if (!gr_window)
 	{
-		aspect = (GLdouble)h/(GLdouble)w;
-		//glOrtho(0, size*2, 0, size*aspect*2, -100000.0, 100000.0);
-	}
-	else
-	{
-		aspect = (GLdouble)w/(GLdouble)h;
-		//glOrtho(0, size*aspect*2, 0, size*2, -100000.0, 100000.0);
+		puts("glfwCreateWindow() failed!");
+		glfwTerminate();
+		exit(0);
 	}
 
-	//printf("aspect: %g\n", aspect);
-	/* Make the world and window coordinates coincide so that 1.0 in */
-	/* model space equals one pixel in window space.                 */
-	//glScaled(aspect, aspect, 1.0);
-
-	/* Now determine where to draw things. */
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-
-	glutPostRedisplay();
-}
-
-void gl_init()
-{
-	//glutInit(&argc, argv);
-	int argc=0;
-	glutInit(&argc, NULL);
-
-	//glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
-	glutInitWindowSize(rswidth, rsheight);
-
-	glutCreateWindow("Funge Wars");
+	glfwMakeContextCurrent(gr_window);
 	
-	rswidth = glutGet(GLUT_WINDOW_WIDTH);
-	rsheight = glutGet(GLUT_WINDOW_HEIGHT);
+	glfwGetWindowSize(gr_window, &rswidth, &rsheight);
 
 	//glEnable(GL_TEXTURE_2D);
 
@@ -517,13 +474,8 @@ void gl_init()
 
 	glLineWidth(1);
 
-	glutDisplayFunc(display);
-	glutReshapeFunc(reshape);
-	glutKeyboardFunc(kb1);
-	glutKeyboardUpFunc(kb1u);
-	glutSpecialFunc(kb2);
-	glutSpecialUpFunc(kb2u);
-	glutIdleFunc(idle);
+	glfwSetKeyCallback(gr_window, gr_key_callback);
+	glfwSetCharModsCallback(gr_window, gr_charmods_callback);
 
 	font = png_texture_load("curses_640x300_2.png", &fontwidth, &fontheight);
 	printf("font tex id: %d\n", font);
